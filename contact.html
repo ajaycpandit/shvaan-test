@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Shvaan Pet Care — Boarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loading">
+  <img id="logo-loading" alt="Shvaan Pet Care" style="width:200px;max-width:70%;height:90px;object-fit:contain;margin-bottom:14px;background:white;border-radius:10px;padding:12px" class="lp">
+  <div class="ls" id="load-status">Connecting…</div>
+</div>
+
+<div id="login-screen" style="position:fixed;inset:0;background:var(--brown-dark);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9998;padding:20px">
+  <div style="background:var(--white);border-radius:var(--r4);box-shadow:var(--s3);padding:30px 26px;width:100%;max-width:360px">
+    <img id="logo-login" alt="Shvaan Pet Care" style="width:170px;max-width:80%;height:64px;object-fit:contain;display:block;margin:0 auto 18px">
+    <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--ink);text-align:center;margin-bottom:4px">Staff Sign In</div>
+    <div style="font-size:12px;color:var(--ink-faint);text-align:center;margin-bottom:20px">Enter your staff credentials to continue</div>
+    <div class="fd" style="margin-bottom:12px"><label>Email</label><input type="email" id="login-email" placeholder="you@shvaanpetcare.com" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"></div>
+    <div class="fd" style="margin-bottom:8px"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div id="login-err" style="font-size:12px;color:var(--danger);min-height:16px;margin-bottom:8px"></div>
+    <button class="btn btn-p" onclick="doLogin()" style="width:100%" id="login-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Sign In</button>
+    <div style="font-size:11px;color:var(--ink-faint);text-align:center;margin-top:16px">Accounts are created by your administrator in Supabase.</div>
+  </div>
+</div>
+
+<!-- CUSTOMER SHELL (shown only for role=customer) -->
+<div id="customer-shell" style="display:none;max-width:760px;margin:0 auto;padding:0 16px 60px">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 0;border-bottom:1px solid var(--cream-dark);margin-bottom:20px">
+    <img id="logo-customer" alt="Shvaan Pet Care" style="height:48px;width:160px;object-fit:contain;object-position:left">
+    <button onclick="doLogout()" class="btn btn-o sm">Sign out</button>
+  </div>
+  <div id="cust-body"></div>
+</div>
+
+<div class="app" id="app-shell" style="display:none">
+  <!-- Desktop sidebar -->
+  <aside class="sb">
+    <div class="sb-brand" style="text-align:center">
+      <img id="logo-sidebar" alt="Shvaan Pet Care" style="width:100%;max-width:150px;height:54px;object-fit:contain;display:block;margin:0 auto;background:white;border-radius:8px;padding:6px">
+    </div>
+    <nav class="sb-nav">
+      <button class="ni active" onclick="goPage('dashboard')" id="ni-dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard
+      </button>
+      <button class="ni" onclick="goPage('calc')" id="ni-calc">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg>Calculate
+      </button>
+      <button class="ni" onclick="goPage('calendar')" id="ni-calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Calendar
+        <span class="ni-badge" id="nb-cal" style="display:none">0</span>
+      </button>
+      <button class="ni" onclick="goPage('requests')" id="ni-requests">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Requests
+        <span class="ni-badge" id="nb-req" style="display:none">0</span>
+      </button>
+      <button class="ni" onclick="goPage('dogs')" id="ni-dogs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Dogs
+      </button>
+      <button class="ni" onclick="goPage('history')" id="ni-history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History
+      </button>
+      <button class="ni" onclick="goPage('finance')" id="ni-finance">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Finance
+      </button>
+      <button class="ni" onclick="goPage('settings')" id="ni-settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Settings
+      </button>
+    </nav>
+    <div class="sb-foot" style="flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:5px"><span class="sync-dot" id="sync-dot"></span><span id="sync-lbl">Connected</span></div>
+      <button onclick="doLogout()" style="background:none;border:none;cursor:pointer;color:rgba(255,255,255,.55);font-family:'DM Sans',sans-serif;font-size:11px;display:flex;align-items:center;gap:5px;padding:4px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span id="logout-email">Sign out</span></button>
+    </div>
+  </aside>
+
+  <!-- Main area -->
+  <div style="display:flex;flex-direction:column;min-height:100dvh">
+    <!-- Mobile top bar -->
+    <div class="mtb">
+      <div><img id="logo-mobile" alt="Shvaan Pet Care" style="height:34px;width:90px;object-fit:contain;background:white;border-radius:6px;padding:3px 6px"></div>
+      <div class="mtb-sync">
+        <span class="sync-dot" id="sync-dot2"></span>
+        <span id="sync-lbl2">Connected</span>
+      </div>
+    </div>
+
+    <main class="main" style="flex:1">
+
+      <!-- DASHBOARD -->
+      <div id="pg-dashboard" class="pg active">
+        <div class="ph"><h1 id="dash-greeting">Dashboard</h1><p id="dash-summary">Loading today's overview…</p></div>
+        <div id="dash-attention"></div>
+        <div id="dash-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px"></div>
+        <div id="dash-ops" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:0"></div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Revenue — Last 6 Months</div>
+          <div id="dash-chart"></div>
+        </div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Next 14 Days — Occupancy</div>
+          <div id="dash-occupancy"></div>
+        </div>
+        <div id="dash-lower" style="display:grid;grid-template-columns:1fr 1fr;gap:14px"></div>
+      </div>
+
+      <!-- CALCULATE -->
+      <div id="pg-calc" class="pg">
+        <div class="ph"><h1>New Booking</h1><p>Select dogs, service, and dates.</p></div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Select Dogs</div>
+          <div class="dd-wrap">
+            <button class="dd-btn" id="dd-btn" onclick="toggleDD()">
+              <span id="dd-lbl" style="color:var(--ink-faint)">Choose dogs…</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="dd-menu" id="dd-menu" style="display:none">
+              <div style="padding:8px;position:sticky;top:0;background:var(--white);border-bottom:1px solid var(--cream-mid)"><input type="text" id="dd-search" placeholder="Search dogs…" oninput="renderDDList()" onclick="event.stopPropagation()" style="width:100%;height:36px;padding:0 11px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--cream)"></div>
+              <div id="dd-list"></div>
+            </div>
+          </div>
+          <div class="sel-tags" id="sel-tags"></div>
+          <div id="no-dogs-hint" style="font-size:12px;color:var(--ink-faint);margin-top:8px;display:none">No dogs yet — add them on the <strong>Dogs</strong> page first.</div>
+        </div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Service & Dates</div>
+          <div class="svc-tog">
+            <button class="svc-btn active" id="svc-boarding" onclick="setSvc('boarding')">🏡 Boarding</button>
+            <button class="svc-btn" id="svc-daycare" onclick="setSvc('daycare')">☀️ Day Care</button>
+          </div>
+          <div class="g2">
+            <div class="fd"><label>Check-In Date</label><input type="date" id="ci-d" oninput="recalc()"></div>
+            <div class="fd"><label>Check-In Time</label><input type="time" id="ci-t" value="10:00" oninput="recalc()"></div>
+            <div class="fd"><label>Check-Out Date</label><input type="date" id="co-d" oninput="recalc()"></div>
+            <div class="fd"><label>Check-Out Time</label><input type="time" id="co-t" value="10:00" oninput="recalc()"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Price Breakdown</div>
+          <div id="result-area"><div class="es"><span class="ei">🧮</span><p>Select dogs and dates to calculate</p></div></div>
+          <div id="save-row" class="btn-row" style="display:none">
+            <button class="btn btn-p" onclick="saveAsReservation()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Save as Reservation</button>
+            <button class="btn btn-o" onclick="clearCalc()">Clear</button>
+          </div>
+          <p style="font-size:11px;color:var(--ink-faint);margin-top:8px">This price is an estimate. Saving creates a reservation you can confirm and check in/out on the <strong>Reservations</strong> page — the final invoice is generated at check-out based on actual times.</p>
+        </div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div id="pg-calendar" class="pg">
+        <div class="ph"><h1>Calendar</h1><p>All scheduled boardings, day cares, and check-ins at a glance.</p></div>
+        <div style="display:flex;gap:0;margin-bottom:14px;background:var(--cream-mid);border:1.5px solid var(--cream-dark);border-radius:var(--radius-lg);padding:4px;width:fit-content">
+          <button class="svc-btn active" id="calview-month" onclick="setCalView('month')" style="flex:none;padding:7px 18px">📅 Month</button>
+          <button class="svc-btn" id="calview-list" onclick="setCalView('list')" style="flex:none;padding:7px 18px">☰ List</button>
+        </div>
+        <div class="cal-wrap" id="cal-month-wrap">
+          <div class="cal-header">
+            <div class="cal-title" id="cal-title">Loading…</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="btn btn-o sm" onclick="calToday()">Today</button>
+              <div class="cal-nav">
+                <button onclick="calPrev()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+                <button onclick="calNext()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+              </div>
+            </div>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+          <div class="cal-legend">
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#C5DEC7"></div>Check-in</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#E8D5A0"></div>Check-out</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#BCCFE8"></div>Staying</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#D5CCF0"></div>Pending Request</div>
+          </div>
+        </div>
+        <div class="cal-wrap" id="cal-list-wrap" style="display:none">
+          <div class="cal-header"><div class="cal-title">Agenda — Arrivals & Departures</div></div>
+          <div id="cal-list-body" style="padding:8px 0"></div>
+        </div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Upcoming This Week</div>
+          <div id="upcoming-list"><div class="es" style="padding:14px"><span class="ei" style="font-size:22px">📅</span><p>No upcoming stays this week</p></div></div>
+        </div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Currently Boarding</div>
+          <div id="currently-boarding"><div class="es" style="padding:14px"><span class="ei" style="font-size:22px">🏡</span><p>No dogs currently boarding</p></div></div>
+        </div>
+      </div>
+
+      <!-- REQUESTS -->
+      <div id="pg-requests" class="pg">
+        <div class="ph"><h1>Reservations</h1><p>Confirm requests, check dogs in and out, and bill the final price automatically.</p></div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>New Request</div>
+          <div class="g2" style="margin-bottom:11px">
+            <div class="fd"><label>Dog(s)</label>
+              <div class="dd-wrap" style="margin-bottom:0"><button class="dd-btn" id="req-dd-btn" onclick="toggleReqDD()"><span id="req-dd-lbl" style="color:var(--ink-faint)">Select dog(s)…</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg></button><div class="dd-menu" id="req-dd-menu" style="display:none"><div style="padding:8px;position:sticky;top:0;background:var(--white);border-bottom:1px solid var(--cream-mid)"><input type="text" id="req-dd-search" placeholder="Search dogs…" oninput="renderReqDDList()" onclick="event.stopPropagation()" style="width:100%;height:36px;padding:0 11px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--cream)"></div><div id="req-dd-list"></div></div></div>
+              <div class="sel-tags" id="req-sel-tags"></div>
+            </div>
+            <div class="fd"><label>Service</label><select id="req-svc"><option value="boarding">🏡 Boarding</option><option value="daycare">☀️ Day Care</option></select></div>
+            <div class="fd"><label>Check-In Date</label><input type="date" id="req-ci"></div>
+            <div class="fd"><label>Check-In Time</label><input type="time" id="req-ci-t" value="10:00"></div>
+            <div class="fd"><label>Check-Out Date</label><input type="date" id="req-co"></div>
+            <div class="fd"><label>Check-Out Time</label><input type="time" id="req-co-t" value="10:00"></div>
+          </div>
+          <div id="req-recall" style="display:none;margin-bottom:13px"></div>
+          <div class="fd" style="margin-bottom:13px"><label>Notes</label><textarea id="req-notes" style="height:52px" placeholder="Special instructions…"></textarea></div>
+          <button class="btn btn-b" onclick="addRequest()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add Request</button>
+        </div>
+        <div id="req-list"></div>
+      </div>
+
+      <!-- DOGS -->
+      <div id="pg-dogs" class="pg">
+        <div class="ph"><h1>Dog Profiles</h1><p>Shared across all users in real time.</p></div>
+        <div id="vacc-status-card"></div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add New Dog</div>
+          <div style="display:flex;gap:18px;align-items:flex-start" class="dog-add-row">
+            <div class="pu-wrap">
+              <div class="pu" onclick="document.getElementById('pfi').click()" id="pu-el">
+                <div id="ppw"><div class="upl">🐶</div><p>Add photo</p></div>
+              </div>
+              <input type="file" id="pfi" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+            </div>
+            <div style="flex:1;min-width:0">
+              <div class="g2" style="margin-bottom:11px">
+                <div class="fd"><label>Dog Name *</label><input type="text" id="nd-name" placeholder="e.g. Buddy"></div>
+                <div class="fd"><label>Owner Name *</label><input type="text" id="nd-owner" placeholder="e.g. Sarah Johnson"></div>
+                <div class="fd"><label>Phone</label><input type="tel" id="nd-phone" placeholder="(555) 123-4567"></div>
+                <div class="fd"><label>Owner Email</label><input type="email" id="nd-email" placeholder="owner@email.com"></div>
+                <div class="fd"><label>Custom Rate ($/day)</label><input type="number" id="nd-rate" placeholder="Blank = default" step="0.01" min="0"></div>
+              </div>
+              <div class="fd" style="margin-bottom:11px">
+                <label>Breed</label>
+                <div class="breed-wrap"><input type="text" id="nd-breed" placeholder="Type to search breed…" autocomplete="off" oninput="filterBreeds(this)" onkeydown="breedKey(event)"><div class="breed-dd" id="breed-dd"></div></div>
+              </div>
+              <div class="fd" style="margin-bottom:12px"><label>Notes / Special Care</label><textarea id="nd-notes" style="height:52px" placeholder="e.g. Meds at 6pm, friendly with other dogs"></textarea></div>
+              <div style="border-top:1px solid var(--cream-dark);padding-top:13px;margin-bottom:12px">
+                <div style="font-size:11px;font-weight:600;color:var(--ink-mid);letter-spacing:.03em;margin-bottom:10px">🐾 Behavior & Habits</div>
+                <div class="g2" style="margin-bottom:10px">
+                  <div class="fd"><label>Temperament</label><select id="nd-t-temp"><option value="">—</option><option>Calm</option><option>Friendly</option><option>Shy</option><option>Anxious</option><option>Reactive</option></select></div>
+                  <div class="fd"><label>Gets Along w/ Other Dogs</label><select id="nd-t-social"><option value="">—</option><option>Yes</option><option>Selective</option><option>No</option><option>Unknown</option></select></div>
+                  <div class="fd"><label>Energy Level</label><select id="nd-t-energy"><option value="">—</option><option>Low</option><option>Moderate</option><option>High</option></select></div>
+                  <div class="fd"><label>Playfulness</label><select id="nd-t-play"><option value="">—</option><option>Low</option><option>Moderate</option><option>High</option></select></div>
+                  <div class="fd"><label>Eating Habits</label><select id="nd-t-eat"><option value="">—</option><option>Good eater</option><option>Picky</option><option>Needs encouragement</option><option>Special diet</option></select></div>
+                </div>
+                <div class="fd"><label>Handling Notes</label><textarea id="nd-t-handling" style="height:46px" placeholder="e.g. Food-motivated, hates thunder, needs slow intro to new dogs"></textarea></div>
+              </div>
+              <div style="border-top:1px solid var(--cream-dark);padding-top:13px;margin-bottom:12px">
+                <div style="font-size:11px;font-weight:600;color:var(--ink-mid);letter-spacing:.03em;margin-bottom:10px">💉 Vaccination Records</div>
+                <div class="g2" style="margin-bottom:11px">
+                  <div class="fd"><label>Rabies Expiry</label><input type="date" id="nd-v-rabies"></div>
+                  <div class="fd"><label>DHPP Expiry</label><input type="date" id="nd-v-dhpp"></div>
+                  <div class="fd"><label>Bordetella Expiry</label><input type="date" id="nd-v-bord"></div>
+                </div>
+                <div class="fd">
+                  <label>Upload Vaccination Records (all 3 together — PDF/Image)</label>
+                  <div class="file-box" id="vacc-box" onclick="document.getElementById('vacc-file').click()"><div id="vacc-box-content"><div style="font-size:20px;margin-bottom:3px">📎</div><div style="font-size:12px;font-weight:600;color:var(--ink-mid)">Click to attach records</div><div style="font-size:11px;color:var(--ink-faint);margin-top:2px">PDF, JPG, PNG — max 5MB</div></div></div>
+                  <input type="file" id="vacc-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleVaccFile(this)">
+                </div>
+              </div>
+              <button class="btn btn-p" onclick="addDog()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add Dog</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M8 11l4 4 4-4M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>Import / Export</div>
+          <p style="font-size:12px;color:var(--ink-faint);margin-bottom:13px;line-height:1.6">Export your dog list to Excel (.xlsx) or import from a spreadsheet. Columns: <strong>Dog Name, Owner Name, Phone, Custom Rate, Notes</strong>. Duplicates (same name + owner) are skipped on import.</p>
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn btn-g" onclick="exportDogs()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M8 11l4 4 4-4M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>Export (.xlsx)</button>
+            <button class="btn btn-o" onclick="document.getElementById('ifi').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9M8 13l4-4 4 4M20 7v-2a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2"/></svg>Import (.xlsx)</button>
+            <input type="file" id="ifi" accept=".xlsx,.xls" style="display:none" onchange="importDogs(this)">
+          </div>
+          <div id="imp-result" style="margin-top:10px;font-size:12px;display:none"></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px;position:relative">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" stroke-width="2" style="width:16px;height:16px;position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="dog-search" placeholder="Search dogs or owners…" oninput="renderDogList()" style="width:100%;height:42px;padding:0 12px 0 36px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;background:var(--white)">
+          </div>
+          <div class="svc-tog" style="margin-bottom:0;width:auto;flex:none">
+            <button class="svc-btn active" id="dogview-card" onclick="setDogView('card')" style="flex:none;padding:9px 14px">⊞ Cards</button>
+            <button class="svc-btn" id="dogview-list" onclick="setDogView('list')" style="flex:none;padding:9px 14px">☰ List</button>
+          </div>
+        </div>
+        <div id="dog-count" style="font-size:12px;color:var(--ink-faint);margin-bottom:10px"></div>
+        <div id="dog-list-wrap"></div>
+      </div>
+
+      <!-- HISTORY -->
+      <div id="pg-history" class="pg">
+        <div class="ph"><h1>Booking History</h1><p>All saved bookings — shared across all users.</p></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:13px;flex-wrap:wrap;gap:8px">
+          <span id="hist-cnt" style="font-size:13px;color:var(--ink-faint)">0 bookings</span>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn btn-g sm" onclick="exportBookings()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 3v12M8 11l4 4 4-4M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>Export</button>
+            <button class="btn btn-o sm" onclick="document.getElementById('bk-import-file').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 21V9M8 13l4-4 4 4M20 7v-2a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2"/></svg>Import Past</button>
+            <button class="btn btn-o sm" onclick="downloadBookingTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Template</button>
+            <input type="file" id="bk-import-file" accept=".xlsx,.xls" style="display:none" onchange="importBookings(this)">
+            <button class="btn btn-d sm" onclick="clearHistory()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Clear All</button>
+          </div>
+        </div>
+        <div id="bk-import-result" style="font-size:12px;display:none;margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+          <div class="dd-wrap" style="flex:1;min-width:190px;margin-bottom:0">
+            <button class="dd-btn" id="hist-dd-btn" onclick="toggleHistDD()"><span id="hist-dd-lbl" style="color:var(--ink-faint)">All dogs</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <div class="dd-menu" id="hist-dd-menu" style="display:none"><div style="padding:8px;position:sticky;top:0;background:var(--white);border-bottom:1px solid var(--cream-mid)"><input type="text" id="hist-dd-search" placeholder="Search dogs…" oninput="renderHistDDList()" onclick="event.stopPropagation()" style="width:100%;height:36px;padding:0 11px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--cream)"></div><div id="hist-dd-list"></div></div>
+          </div>
+          <div class="dd-wrap" style="flex:1;min-width:190px;margin-bottom:0">
+            <button class="dd-btn" id="histo-dd-btn" onclick="toggleHistoDD()"><span id="histo-dd-lbl" style="color:var(--ink-faint)">All owners</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <div class="dd-menu" id="histo-dd-menu" style="display:none"><div style="padding:8px;position:sticky;top:0;background:var(--white);border-bottom:1px solid var(--cream-mid)"><input type="text" id="histo-dd-search" placeholder="Search owners…" oninput="renderHistoDDList()" onclick="event.stopPropagation()" style="width:100%;height:36px;padding:0 11px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--cream)"></div><div id="histo-dd-list"></div></div>
+          </div>
+          <select id="hist-paid" onchange="renderHistory()" style="height:42px;padding:0 12px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--white);outline:none"><option value="all">All</option><option value="paid">Paid only</option><option value="unpaid">Unpaid only</option></select>
+          <select id="hist-svc" onchange="renderHistory()" style="height:42px;padding:0 12px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:14px;font-family:'DM Sans',sans-serif;background:var(--white);outline:none"><option value="all">All services</option><option value="boarding">Boarding</option><option value="daycare">Day Care</option></select>
+        </div>
+        <div id="hist-filter-tags" class="sel-tags" style="margin-bottom:10px"></div>
+        <div id="hist-wrap"></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="pg-finance" class="pg">
+        <div class="ph"><h1>Finance</h1><p>Income from completed invoices over a date range.</p></div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Date Range</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn btn-o sm" onclick="finPreset('1m')" id="fin-p-1m">This Month</button>
+            <button class="btn btn-o sm" onclick="finPreset('3m')" id="fin-p-3m">Last 3 Months</button>
+            <button class="btn btn-o sm" onclick="finPreset('ytd')" id="fin-p-ytd">This Year</button>
+            <button class="btn btn-o sm" onclick="finPreset('all')" id="fin-p-all">All Time</button>
+          </div>
+          <div class="g2">
+            <div class="fd"><label>From</label><input type="date" id="fin-from" oninput="renderFinance()"></div>
+            <div class="fd"><label>To</label><input type="date" id="fin-to" oninput="renderFinance()"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px" id="fin-cards"></div>
+        <div class="card">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Income by Month</div>
+          <div id="fin-chart"></div>
+        </div>
+        <div class="card">
+          <div class="ct" style="justify-content:space-between"><span style="display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Invoices</span><button class="btn btn-g sm" onclick="exportFinance()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M12 3v12M8 11l4 4 4-4M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>Export</button></div>
+          <div id="fin-list"></div>
+        </div>
+      </div>
+
+      <div id="pg-settings" class="pg">
+        <div class="ph"><h1>Settings</h1><p>Shared across all users.</p></div>
+        <div class="card">
+          <div class="ss"><h3>💰 Default Rates</h3>
+            <div class="g2">
+              <div class="fd"><label>Boarding Rate (per 24h)</label><input type="number" id="s-br" step="0.01" min="0"><div class="fh">Base nightly boarding rate</div></div>
+              <div class="fd"><label>Day Care Rate (per day)</label><input type="number" id="s-dc" step="0.01" min="0"><div class="fh">Daytime-only care rate</div></div>
+            </div>
+          </div>
+          <div class="ss"><h3>⏱ Surcharge Rules</h3>
+            <div class="g2">
+              <div class="fd"><label>Grace Period (hours)</label><input type="number" id="s-th" step="0.5" min="0" max="23"><div class="fh">Hours allowed before surcharge kicks in</div></div>
+              <div class="fd"><label>Surcharge % of daily rate</label><input type="number" id="s-pc" step="1" min="0" max="100"><div class="fh">Added when threshold is exceeded</div></div>
+            </div>
+            <div class="sc-prev" id="sc-prev"></div>
+          </div>
+          <div class="ss"><h3>🏠 Capacity</h3>
+            <div class="fd" style="max-width:220px"><label>Total Kennels / Spaces</label><input type="number" id="s-cap" min="1" step="1"><div class="fh">Used for occupancy % and overbooking alerts</div></div>
+          </div>
+          <div class="ss"><h3>🖼️ Business Logo</h3>
+            <p style="font-size:12px;color:var(--ink-faint);margin-bottom:10px;line-height:1.5">Upload your own logo (PNG/JPG, under 1MB). Appears in the sidebar, loading screen, and on invoices.</p>
+            <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+              <div style="background:var(--cream-mid);border:1px solid var(--cream-dark);border-radius:var(--r2);padding:10px;display:flex;align-items:center;justify-content:center;min-width:120px;min-height:54px"><img id="logo-preview" alt="Logo preview" style="height:44px;width:150px;object-fit:contain"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-o sm" onclick="document.getElementById('logo-file').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 3v12M8 11l4 4 4-4M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>Upload Logo</button>
+                <button class="btn btn-o sm" onclick="resetLogo()">Use Default</button>
+              </div>
+              <input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="handleLogoFile(this)">
+            </div>
+          </div>
+          <div class="ss"><h3>🏢 Business Info (for invoices)</h3>
+            <div class="g2">
+              <div class="fd"><label>Business Name</label><input type="text" id="s-bn" placeholder="Paws & Board"></div>
+              <div class="fd"><label>Phone</label><input type="tel" id="s-bp" placeholder="(555) 000-0000"></div>
+              <div class="fd"><label>Email</label><input type="email" id="s-be" placeholder="hello@pawsandboard.com"></div>
+              <div class="fd"><label>Address</label><input type="text" id="s-ba" placeholder="123 Main St, City, State"></div>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-p" onclick="saveSettings()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Save Settings</button>
+            <button class="btn btn-o" onclick="resetSettings()">Reset Defaults</button>
+          </div>
+        </div>
+        <div class="card" id="team-card" style="display:none">
+          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>Team & Access</div>
+          <p style="font-size:12px;color:var(--ink-faint);margin-bottom:14px;line-height:1.6">Set each person\u2019s role and what staff can access. Accounts are created in Supabase (Authentication → Users); here you assign their role &amp; permissions. Admins see everything; customers see only their own dogs.</p>
+          <div id="team-list"></div>
+          <div style="border-top:1px solid var(--cream-dark);margin-top:14px;padding-top:14px">
+            <div style="font-size:12px;font-weight:600;color:var(--ink-mid);margin-bottom:8px">Add / update a person by email</div>
+            <div class="g2" style="margin-bottom:10px">
+              <div class="fd"><label>User Email (must match their Supabase login)</label><input type="email" id="tm-email" placeholder="person@email.com"></div>
+              <div class="fd"><label>Role</label><select id="tm-role" onchange="tmRoleChange()"><option value="staff">Staff</option><option value="admin">Admin</option><option value="customer">Customer</option></select></div>
+            </div>
+            <div class="fd" id="tm-owner-wrap" style="margin-bottom:10px;display:none"><label>Linked Owner Name (for customers — must match their dogs\u2019 owner name exactly)</label><input type="text" id="tm-owner" placeholder="e.g. Sarah Johnson"></div>
+            <div id="tm-perms-wrap" style="margin-bottom:12px">
+              <div style="font-size:12px;font-weight:600;color:var(--ink-mid);margin-bottom:8px">Staff can access:</div>
+              <div id="tm-perms" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+            </div>
+            <button class="btn btn-p" onclick="saveTeamMember()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Save Person</button>
+            <div id="tm-result" style="font-size:12px;margin-top:8px;display:none"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Mobile bottom nav -->
+<nav class="bn" id="bn">
+  <button class="bni active" onclick="goPage('dashboard')" id="bni-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Home</button>
+  <button class="bni" onclick="goPage('calc')" id="bni-calc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg>Calc</button>
+  <button class="bni" onclick="goPage('calendar')" id="bni-calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Calendar<span class="bni-badge" id="bnb-cal" style="display:none">0</span></button>
+  <button class="bni" onclick="goPage('requests')" id="bni-requests"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Requests<span class="bni-badge" id="bnb-req" style="display:none">0</span></button>
+  <button class="bni" onclick="goPage('dogs')" id="bni-dogs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Dogs</button>
+  <button class="bni" onclick="goPage('history')" id="bni-history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History</button>
+  <button class="bni" onclick="goPage('finance')" id="bni-finance"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Finance</button>
+  <button class="bni" onclick="goPage('settings')" id="bni-settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Settings</button>
+</nav>
+
+<!-- Desktop notification bell -->
+<div style="position:fixed;top:14px;right:18px;z-index:400">
+  <div class="notif-wrap">
+    <button class="notif-btn" onclick="toggleNotif(event)" style="background:var(--brown-dark);width:38px;height:38px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="nbadge" id="nbadge-desk" style="display:none">0</span>
+    </button>
+    <div class="notif-panel" id="notif-panel-desk" style="display:none"></div>
+  </div>
+</div>
+
+<!-- Day detail modal -->
+<div class="mo" id="day-mo"><div class="mo-inner"><div class="mo-head"><h3 id="day-mo-title">Day Detail</h3><button class="btn btn-o sm" onclick="closeDayMo()">Close</button></div><div class="mo-body" id="day-mo-body"></div></div></div>
+
+<!-- Edit Dog modal -->
+<div class="mo" id="edit-mo"><div class="mo-inner"><div class="mo-head"><h3>Edit Dog Profile</h3><button class="btn btn-o sm" onclick="closeEditMo()">Close</button></div>
+<div class="mo-body">
+  <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap" class="dog-add-row">
+    <div>
+      <div class="pu" onclick="document.getElementById('e-pfi').click()"><div id="e-ppw"><div class="upl">🐶</div><p>Add photo</p></div></div>
+      <input type="file" id="e-pfi" accept="image/*" style="display:none" onchange="handleEditPhoto(this)">
+    </div>
+    <div style="flex:1;min-width:240px">
+      <div class="g2" style="margin-bottom:11px">
+        <div class="fd"><label>Dog Name *</label><input type="text" id="e-name"></div>
+        <div class="fd"><label>Owner Name *</label><input type="text" id="e-owner"></div>
+        <div class="fd"><label>Phone</label><input type="tel" id="e-phone"></div>
+        <div class="fd"><label>Owner Email</label><input type="email" id="e-email"></div>
+        <div class="fd"><label>Custom Rate ($/day)</label><input type="number" id="e-rate" step="0.01" min="0"></div>
+      </div>
+      <div class="fd" style="margin-bottom:11px"><label>Breed</label>
+        <div class="breed-wrap"><input type="text" id="e-breed" placeholder="Type to search breed…" autocomplete="off" oninput="filterBreeds(this,'e-breed-dd')" onkeydown="breedKey(event,'e-breed-dd','e-breed')"><div class="breed-dd" id="e-breed-dd"></div></div>
+      </div>
+      <div class="fd" style="margin-bottom:12px"><label>Notes / Special Care</label><textarea id="e-notes" style="height:52px"></textarea></div>
+      <div style="border-top:1px solid var(--cream-dark);padding-top:13px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-mid);letter-spacing:.03em;margin-bottom:10px">🐾 Behavior & Habits</div>
+        <div class="g2" style="margin-bottom:10px">
+          <div class="fd"><label>Temperament</label><select id="e-t-temp"><option value="">—</option><option>Calm</option><option>Friendly</option><option>Shy</option><option>Anxious</option><option>Reactive</option></select></div>
+          <div class="fd"><label>Gets Along w/ Other Dogs</label><select id="e-t-social"><option value="">—</option><option>Yes</option><option>Selective</option><option>No</option><option>Unknown</option></select></div>
+          <div class="fd"><label>Energy Level</label><select id="e-t-energy"><option value="">—</option><option>Low</option><option>Moderate</option><option>High</option></select></div>
+          <div class="fd"><label>Playfulness</label><select id="e-t-play"><option value="">—</option><option>Low</option><option>Moderate</option><option>High</option></select></div>
+          <div class="fd"><label>Eating Habits</label><select id="e-t-eat"><option value="">—</option><option>Good eater</option><option>Picky</option><option>Needs encouragement</option><option>Special diet</option></select></div>
+        </div>
+        <div class="fd"><label>Handling Notes</label><textarea id="e-t-handling" style="height:46px"></textarea></div>
+      </div>
+      <div style="border-top:1px solid var(--cream-dark);padding-top:13px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-mid);letter-spacing:.03em;margin-bottom:10px">💉 Vaccination Records</div>
+        <div class="g2" style="margin-bottom:11px">
+          <div class="fd"><label>Rabies Expiry</label><input type="date" id="e-v-rabies"></div>
+          <div class="fd"><label>DHPP Expiry</label><input type="date" id="e-v-dhpp"></div>
+          <div class="fd"><label>Bordetella Expiry</label><input type="date" id="e-v-bord"></div>
+        </div>
+        <div class="fd"><label>Vaccination Records File</label>
+          <div class="file-box" id="e-vacc-box" onclick="document.getElementById('e-vacc-file').click()"><div id="e-vacc-box-content"><div style="font-size:20px;margin-bottom:3px">📎</div><div style="font-size:12px;font-weight:600;color:var(--ink-mid)">Click to attach / replace</div></div></div>
+          <input type="file" id="e-vacc-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleEditVaccFile(this)">
+        </div>
+      </div>
+      <button class="btn btn-p" onclick="saveEditDog()" style="width:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Save Changes</button>
+    </div>
+  </div>
+</div></div></div>
+
+<!-- Dog History modal -->
+<div class="mo" id="doghist-mo"><div class="mo-inner"><div class="mo-head"><h3 id="doghist-title">Reservation History</h3><button class="btn btn-o sm" onclick="closeDogHistory()">Close</button></div><div class="mo-body" id="doghist-body"></div></div></div>
+
+<!-- Check In / Out modal -->
+<div class="mo" id="cio-mo"><div class="mo-inner"><div class="mo-head"><h3 id="cio-title">Check In</h3><button class="btn btn-o sm" onclick="closeCio()">Close</button></div>
+<div class="mo-body">
+  <p id="cio-hint" style="font-size:12px;color:var(--ink-light);margin-bottom:14px;line-height:1.5"></p>
+  <div id="cio-recall" style="display:none;margin-bottom:14px"></div>
+  <div id="cio-in-block" style="display:none;margin-bottom:14px">
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:8px">Actual Check-In</div>
+    <div class="g2">
+      <div class="fd"><label>Date</label><input type="date" id="cio-in-date" oninput="cioUpdatePreview()"></div>
+      <div class="fd"><label>Time</label><input type="time" id="cio-in-time" oninput="cioUpdatePreview()"></div>
+    </div>
+  </div>
+  <div id="cio-out-label" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:8px;display:none">Actual Check-Out</div>
+  <div class="g2" style="margin-bottom:14px">
+    <div class="fd"><label id="cio-date-lbl">Date</label><input type="date" id="cio-date" oninput="cioUpdatePreview()"></div>
+    <div class="fd"><label>Time</label><input type="time" id="cio-time" oninput="cioUpdatePreview()"></div>
+  </div>
+  <div id="cio-discount-block" style="display:none;margin-bottom:14px">
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:8px">Discount (optional)</div>
+    <div style="display:flex;gap:8px">
+      <div class="svc-tog" style="margin-bottom:0;width:auto;flex:none">
+        <button class="svc-btn active" id="cio-disc-pct" onclick="setDiscType('pct')" style="flex:none;padding:8px 14px">%</button>
+        <button class="svc-btn" id="cio-disc-amt" onclick="setDiscType('amt')" style="flex:none;padding:8px 14px">$</button>
+      </div>
+      <input type="number" id="cio-disc-val" min="0" step="0.01" placeholder="0" oninput="cioUpdatePreview()" style="flex:1;height:44px;padding:0 12px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:16px;font-family:'DM Sans',sans-serif;outline:none;background:var(--cream-mid)">
+    </div>
+  </div>
+  <div id="cio-preview" style="background:var(--cream-mid);border:1px solid var(--cream-dark);border-radius:var(--radius-md);padding:13px 15px;margin-bottom:14px;display:none"></div>
+  <button class="btn btn-p" onclick="saveCio()" style="width:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg><span id="cio-save-lbl">Save</span></button>
+</div></div></div>
+
+<!-- Stay Photos modal -->
+<div class="mo" id="photo-mo"><div class="mo-inner"><div class="mo-head"><h3 id="photo-title">Stay Photos</h3><button class="btn btn-o sm" onclick="closeStayPhotos()">Close</button></div>
+<div class="mo-body">
+  <div id="photo-add-row" style="display:flex;gap:8px;margin-bottom:14px">
+    <input type="file" id="photo-file" accept="image/*" multiple style="display:none" onchange="onStayPhotoPick(this)">
+    <button class="btn btn-p" id="photo-add-btn" onclick="document.getElementById('photo-file').click()" style="width:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>Add Photos</button>
+  </div>
+  <div id="photo-grid" class="photo-grid"></div>
+</div></div></div>
+
+<!-- Edit Reservation modal -->
+<div class="mo" id="editreq-mo"><div class="mo-inner"><div class="mo-head"><h3>Edit Reservation</h3><button class="btn btn-o sm" onclick="closeEditReq()">Close</button></div>
+<div class="mo-body">
+  <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:14px" id="er-dogname"></div>
+  <div class="fd" style="margin-bottom:11px"><label>Service</label><select id="er-svc"><option value="boarding">🏡 Boarding</option><option value="daycare">☀️ Day Care</option></select></div>
+  <div class="g2" style="margin-bottom:11px">
+    <div class="fd"><label>Check-In Date</label><input type="date" id="er-ci"></div>
+    <div class="fd"><label>Check-In Time</label><input type="time" id="er-ci-t"></div>
+    <div class="fd"><label>Check-Out Date</label><input type="date" id="er-co"></div>
+    <div class="fd"><label>Check-Out Time</label><input type="time" id="er-co-t"></div>
+  </div>
+  <div class="fd" style="margin-bottom:14px"><label>Notes</label><textarea id="er-notes" style="height:52px"></textarea></div>
+  <button class="btn btn-p" onclick="saveEditReq()" style="width:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Save Changes</button>
+</div></div></div>
+
+<!-- Edit Booking (invoice dates) modal -->
+<div class="mo" id="editbk-mo"><div class="mo-inner"><div class="mo-head"><h3>Edit Invoice Dates</h3><button class="btn btn-o sm" onclick="closeEditBooking()">Close</button></div>
+<div class="mo-body">
+  <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:14px" id="eb-dogname"></div>
+  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:8px">Actual Check-In</div>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="fd"><label>Date</label><input type="date" id="eb-ci" oninput="ebPreview()"></div>
+    <div class="fd"><label>Time</label><input type="time" id="eb-ci-t" oninput="ebPreview()"></div>
+  </div>
+  <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:8px">Actual Check-Out</div>
+  <div class="g2" style="margin-bottom:12px">
+    <div class="fd"><label>Date</label><input type="date" id="eb-co" oninput="ebPreview()"></div>
+    <div class="fd"><label>Time</label><input type="time" id="eb-co-t" oninput="ebPreview()"></div>
+  </div>
+  <div id="eb-discount-block" style="margin-bottom:12px">
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:8px">Discount</div>
+    <div style="display:flex;gap:8px">
+      <div class="svc-tog" style="margin-bottom:0;width:auto;flex:none">
+        <button class="svc-btn active" id="eb-disc-pct" onclick="ebSetDiscType('pct')" style="flex:none;padding:8px 14px">%</button>
+        <button class="svc-btn" id="eb-disc-amt" onclick="ebSetDiscType('amt')" style="flex:none;padding:8px 14px">$</button>
+      </div>
+      <input type="number" id="eb-disc-val" min="0" step="0.01" placeholder="0" oninput="ebPreview()" style="flex:1;height:44px;padding:0 12px;border:1.5px solid var(--cream-dark);border-radius:var(--r2);font-size:16px;font-family:'DM Sans',sans-serif;outline:none;background:var(--cream-mid)">
+    </div>
+  </div>
+  <div id="eb-preview" style="background:var(--cream-mid);border:1px solid var(--cream-dark);border-radius:var(--r2);padding:13px 15px;margin-bottom:14px;display:none"></div>
+  <button class="btn btn-p" onclick="saveEditBooking()" style="width:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Save & Recalculate</button>
+</div></div></div>
+
+<!-- Payment modal -->
+<div class="mo" id="pay-mo"><div class="mo-inner"><div class="mo-head"><h3>Record Payment</h3><button class="btn btn-o sm" onclick="closePayment()">Close</button></div>
+<div class="mo-body">
+  <div id="pay-summary" style="background:var(--cream-mid);border:1px solid var(--cream-dark);border-radius:var(--r2);padding:12px 14px;margin-bottom:14px"></div>
+  <div class="fd" style="margin-bottom:12px"><label>Payment Method</label>
+    <select id="pay-method"><option>Cash</option><option>Card</option><option>Venmo/Zelle</option><option>Other</option></select>
+  </div>
+  <div class="fd" style="margin-bottom:14px"><label>Date Received</label><input type="date" id="pay-date"></div>
+  <button class="btn btn-g" onclick="savePayment()" style="width:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Mark as Paid</button>
+</div></div></div>
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-msg"></span>
+</div>
+
+<!-- Invoice modal -->
+<div class="inv-overlay" id="inv-overlay">
+  <div class="inv-modal-inner">
+    <div class="inv-mh">
+      <h3>Invoice</h3>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-g sm" onclick="printInv()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print / PDF</button>
+        <button class="btn btn-o sm" onclick="closeInv()">Close</button>
+      </div>
+    </div>
+    <div class="inv-body" id="inv-body"></div>
+  </div>
+</div>
+<div class="printable" id="printable"></div>
+
+<script src="js/core.js"></script>
+<script src="js/init.js"></script>
+<script src="js/customer.js"></script>
+<script src="js/dogs.js"></script>
+<script src="js/calculate.js"></script>
+<script src="js/dog-profiles.js"></script>
+<script src="js/notifications.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/reservations.js"></script>
+<script src="js/photos.js"></script>
+<script src="js/excel.js"></script>
+<script src="js/history.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/finance.js"></script>
+<script src="js/invoice.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>

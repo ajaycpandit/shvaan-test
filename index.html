@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Get Started — Shvaan Pet Care</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--cream:#FBF6EF;--crm:#F5ECE0;--crd:#EAD9C6;--br:#E07B2E;--bd:#C25E18;--ink:#2A211A;--inm:#4F4339;--inl:#7E6F61;--inf:#B3A595;--wh:#FFF;--dng:#D9534F;--fo:#2E8B82;--teal:#2E8B82;--teal-pale:#EAF4F3}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);line-height:1.6;min-height:100vh;padding:20px 16px 60px}
+.wrap{max-width:560px;margin:0 auto}
+.hero{text-align:center;padding:18px 0 22px}
+.hero img{height:72px;width:auto;max-width:80%;object-fit:contain;margin-bottom:12px}
+.hero h1{font-family:'DM Serif Display',serif;font-size:26px;color:var(--ink)}
+.hero p{font-size:14px;color:var(--inl);margin-top:5px;max-width:400px;margin-left:auto;margin-right:auto}
+
+/* path chooser */
+.path-chooser{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.path-btn{background:var(--wh);border:2px solid var(--crd);border-radius:16px;padding:22px 16px;cursor:pointer;text-align:center;font-family:'DM Sans',sans-serif;transition:border-color .15s,box-shadow .15s}
+.path-btn:hover,.path-btn.active{border-color:var(--br);box-shadow:0 0 0 3px rgba(224,123,46,.15)}
+.path-btn .pb-ico{font-size:32px;margin-bottom:8px}
+.path-btn .pb-title{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:4px}
+.path-btn .pb-sub{font-size:12px;color:var(--inl);line-height:1.4}
+@media(max-width:420px){.path-chooser{grid-template-columns:1fr}}
+
+.panel{display:none}.panel.on{display:block}
+
+/* notice box */
+.notice{background:var(--teal-pale);border:1.5px solid var(--teal);border-radius:12px;padding:14px 16px;font-size:13px;color:var(--ink);margin-bottom:18px;line-height:1.5}
+.notice strong{color:var(--teal)}
+.notice a{color:var(--teal);font-weight:600}
+
+.card{background:var(--wh);border:1px solid var(--crd);border-radius:20px;padding:22px;box-shadow:0 4px 16px rgba(42,33,26,.08);margin-bottom:14px}
+.fd{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.fd label{font-size:12px;font-weight:600;color:var(--inm)}
+.req{color:var(--dng)}
+.fd input,.fd select,.fd textarea{height:46px;padding:0 13px;border:1.5px solid var(--crd);border-radius:10px;background:var(--cream);color:var(--ink);font-size:16px;font-family:'DM Sans',sans-serif;outline:none;width:100%;-webkit-appearance:none}
+.fd textarea{height:auto;padding:11px 13px;resize:vertical}
+.fd input:focus,.fd select:focus,.fd textarea:focus{border-color:var(--br);box-shadow:0 0 0 3px rgba(224,123,46,.13);background:var(--wh)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:480px){.g2{grid-template-columns:1fr}}
+.btn{width:100%;height:50px;border:none;border-radius:12px;background:var(--br);color:#fff;font-size:16px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{background:var(--bd)}
+.btn:disabled{opacity:.6}
+.btn-teal{background:var(--teal)}
+.btn-teal:active{background:#236b63}
+.note{font-size:12px;color:var(--inf);text-align:center;margin-top:14px;line-height:1.5}
+.ok{text-align:center;padding:40px 20px}
+.ok .em{font-size:54px;margin-bottom:14px}
+.ok h2{font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink);margin-bottom:8px}
+.ok p{font-size:14px;color:var(--inl);margin-bottom:20px}
+.err{background:#FBEDEC;color:var(--dng);border:1px solid #EAB0AC;border-radius:10px;padding:10px 13px;font-size:13px;margin-bottom:14px;display:none}
+.sec-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--inf);margin-bottom:12px}
+.seg{display:flex;background:var(--crm);border:1.5px solid var(--crd);border-radius:14px;padding:4px;gap:4px;margin-bottom:14px}
+.seg button{flex:1;padding:11px;border:none;background:none;border-radius:9px;font-size:15px;font-weight:500;color:var(--inl);cursor:pointer;font-family:'DM Sans',sans-serif}
+.seg button.on{background:var(--wh);color:var(--bd);font-weight:600;box-shadow:0 1px 4px rgba(42,33,26,.1)}
+.breed-wrap{position:relative}
+.breed-dd{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--wh);border:1.5px solid var(--crd);border-radius:10px;box-shadow:0 4px 16px rgba(42,33,26,.12);z-index:100;max-height:220px;overflow-y:auto;display:none}
+.breed-opt{padding:10px 13px;font-size:15px;cursor:pointer;color:var(--ink)}
+.breed-opt:hover,.breed-opt.focused{background:var(--crm);color:var(--bd)}
+.back-link{display:inline-block;font-size:13px;color:var(--inl);margin-bottom:16px;cursor:pointer;text-decoration:none}
+.back-link:hover{color:var(--br)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <a href="index.html"><img src="data:image/png;base64,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" alt="Shvaan Pet Care"></a>
+    <h1>Welcome to Shvaan Pet Care</h1>
+    <p>Tell us a little about where you are and we'll point you in the right direction.</p>
+  </div>
+
+  <!-- ── step 1: path chooser ── -->
+  <div id="step-choose">
+    <div class="path-chooser">
+      <button class="path-btn" onclick="choosePath('new')">
+        <div class="pb-ico">🐾</div>
+        <div class="pb-title">I'm a new client</div>
+        <div class="pb-sub">First time here — I'd like to schedule a meet &amp; greet</div>
+      </button>
+      <button class="path-btn" onclick="choosePath('returning')">
+        <div class="pb-ico">🏡</div>
+        <div class="pb-title">I'm a returning client</div>
+        <div class="pb-sub">I already have an account and want to request a stay</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── path A: new client → meet & greet form ── -->
+  <div class="panel" id="panel-new">
+    <a class="back-link" onclick="goBack()">← Back</a>
+    <div class="card" id="mg-form-card">
+      <div class="notice">
+        <strong>👋 Great — let's set up a meet &amp; greet!</strong><br>
+        A meet &amp; greet is a short, free visit where we get to know your dog, you can see our space, and we can make sure it's a great fit. We'll reach out within 24 hours to confirm a time.
+      </div>
+      <div class="err" id="mg-err"></div>
+      <div class="sec-title">About Your Dog</div>
+      <div class="g2">
+        <div class="fd"><label>Dog's name <span class="req">*</span></label><input id="mg-dog" placeholder="Buddy"></div>
+        <div class="fd"><label>Breed</label><div class="breed-wrap"><input id="mg-breed" placeholder="e.g. Golden Retriever" autocomplete="off" oninput="filterBreeds(this,'mg-breed-dd')" onkeydown="breedKey(event,'mg-breed-dd','mg-breed')"><div class="breed-dd" id="mg-breed-dd"></div></div></div>
+      </div>
+      <div class="g2">
+        <div class="fd"><label>Age</label><input id="mg-age" placeholder="3 years"></div>
+        <div class="fd"><label>Size</label>
+          <select id="mg-size"><option value="">Select…</option><option>Small (under 20 lbs)</option><option>Medium (20–50 lbs)</option><option>Large (50–90 lbs)</option><option>Extra large (90+ lbs)</option></select>
+        </div>
+      </div>
+      <div class="fd"><label>Temperament / anything we should know</label><textarea id="mg-temp" rows="2" placeholder="e.g. Friendly with other dogs, nervous around strangers, pulls on lead…"></textarea></div>
+      <div class="sec-title">Your Contact Details</div>
+      <div class="fd"><label>Your name <span class="req">*</span></label><input id="mg-owner" placeholder="Sarah Johnson"></div>
+      <div class="g2">
+        <div class="fd"><label>Phone <span class="req">*</span></label><input id="mg-phone" type="tel" placeholder="(512) 555-0000"></div>
+        <div class="fd"><label>Email <span class="req">*</span></label><input id="mg-email" type="email" placeholder="you@email.com"></div>
+      </div>
+      <div class="sec-title">Service Interest</div>
+      <div class="seg"><button type="button" class="on" id="mg-seg-boarding" onclick="setMgSvc('boarding')">🏡 Boarding</button><button type="button" id="mg-seg-daycare" onclick="setMgSvc('daycare')">☀️ Day Care</button><button type="button" id="mg-seg-both" onclick="setMgSvc('both')">Both</button></div>
+      <div class="fd"><label>Anything else you'd like us to know?</label><textarea id="mg-notes" rows="2" placeholder="Medications, dietary needs, previous boarding experience…"></textarea></div>
+      <button class="btn" id="mg-submit" onclick="submitMG()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Request Meet &amp; Greet
+      </button>
+      <div class="note">We'll be in touch within 24 hours to confirm a time. No commitment required.</div>
+    </div>
+    <div class="card ok" id="mg-ok" style="display:none">
+      <div class="em">🐾</div>
+      <h2>Meet &amp; greet requested!</h2>
+      <p>Thanks! We've received your request and will reach out within 24 hours to arrange a time. We can't wait to meet your pup.</p>
+      <a class="btn" href="index.html" style="text-decoration:none">Back to home</a>
+    </div>
+  </div>
+
+  <!-- ── path B: returning client → login gate ── -->
+  <div class="panel" id="panel-returning">
+    <a class="back-link" onclick="goBack()">← Back</a>
+    <div class="card">
+      <div class="notice">
+        <strong>🔒 Reservations are made through the client portal.</strong><br>
+        Log in to your account to request boarding or day care. If you don't have a dog profile set up yet, you'll need to <strong>add your dog first</strong> before submitting a reservation request — this ensures we have everything we need to take great care of your pup.
+      </div>
+      <a class="btn btn-teal" href="app.html" style="text-decoration:none;margin-bottom:12px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Log In to Client Portal
+      </a>
+      <div class="note">Once logged in: go to <strong>Dogs</strong> to add or check your dog's profile, then visit <strong>Reservations</strong> to submit a request.</div>
+    </div>
+    <div class="card" style="background:var(--crm);border-color:var(--crd)">
+      <div style="font-size:13px;color:var(--inl);line-height:1.6">
+        <strong style="display:block;margin-bottom:6px;color:var(--inm)">Why do I need a dog profile first?</strong>
+        Your dog's profile stores their breed, vaccination records, feeding routine, and any special care notes. This means every member of our team knows exactly how to care for your dog before they even arrive — and we can calculate accurate pricing for your stay.
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+const SB='https://xtvyyszobucmaktpulxt.supabase.co',SK='sb_publishable_yz_iycmCCjIld2KoB_SNDg_TLHYHdhv';
+let mgSvc='boarding';
+function choosePath(p){
+  document.getElementById('step-choose').style.display='none';
+  document.querySelectorAll('.path-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-new').classList.toggle('on', p==='new');
+  document.getElementById('panel-returning').classList.toggle('on', p==='returning');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function goBack(){
+  document.getElementById('step-choose').style.display='block';
+  document.getElementById('panel-new').classList.remove('on');
+  document.getElementById('panel-returning').classList.remove('on');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function setMgSvc(s){mgSvc=s;['boarding','daycare','both'].forEach(k=>document.getElementById('mg-seg-'+k).classList.toggle('on',k===s));}
+function showErr(id,m){const e=document.getElementById(id);e.textContent=m;e.style.display='block';e.scrollIntoView({behavior:'smooth',block:'center'});}
+async function submitMG(){
+  const dog=document.getElementById('mg-dog').value.trim();
+  const owner=document.getElementById('mg-owner').value.trim();
+  const phone=document.getElementById('mg-phone').value.trim();
+  const email=document.getElementById('mg-email').value.trim();
+  document.getElementById('mg-err').style.display='none';
+  if(!dog||!owner||!phone||!email){showErr('mg-err',"Please fill in your dog's name, your name, phone, and email.");return;}
+  const btn=document.getElementById('mg-submit');btn.disabled=true;btn.textContent='Sending…';
+  const rec={
+    id:Date.now().toString()+Math.random().toString(36).slice(2),
+    dog_id:null,
+    dog_name:dog,
+    owner_name:owner,
+    service:'meet_and_greet',
+    checkin:new Date().toISOString(),
+    checkout:new Date().toISOString(),
+    notes:['Breed: '+(document.getElementById('mg-breed').value||'—'),'Age: '+(document.getElementById('mg-age').value||'—'),'Size: '+(document.getElementById('mg-size').value||'—'),'Temperament: '+(document.getElementById('mg-temp').value||'—'),'Email: '+email,'Phone: '+phone,'Service interest: '+mgSvc,document.getElementById('mg-notes').value].filter(x=>x&&!x.endsWith('—')&&!x.endsWith(': ')).join(' | '),
+    status:'pending',
+    created_at:new Date().toISOString(),
+    source:'meet_greet'
+  };
+  try{
+    const res=await fetch(SB+'/rest/v1/requests',{method:'POST',headers:{'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json'},body:JSON.stringify(rec)});
+    if(!res.ok){const t=await res.text();throw new Error(t||'Submission failed');}
+    document.getElementById('mg-form-card').style.display='none';
+    document.getElementById('mg-ok').style.display='block';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }catch(e){btn.disabled=false;btn.innerHTML='Request Meet &amp; Greet';showErr('mg-err','Sorry, something went wrong: '+e.message+'. Please call us instead.');}
+}
+const BREEDS=['Affenpinscher','Afghan Hound','Airedale Terrier','Akita','Alaskan Malamute','American Bulldog','American Eskimo Dog','American Pitbull Terrier','American Staffordshire Terrier','Anatolian Shepherd','Australian Cattle Dog','Australian Shepherd','Australian Terrier','Basenji','Basset Hound','Beagle','Bearded Collie','Belgian Malinois','Belgian Sheepdog','Belgian Tervuren','Bernese Mountain Dog','Bichon Frise','Border Collie','Border Terrier','Borzoi','Boston Terrier','Boxer','Brittany','Brussels Griffon','Bull Terrier','Bulldog','Bullmastiff','Cairn Terrier','Cane Corso','Cardigan Welsh Corgi','Cavalier King Charles Spaniel','Chesapeake Bay Retriever','Chihuahua','Chinese Crested','Chinese Shar-Pei','Chow Chow','Cocker Spaniel','Collie','Dachshund','Dalmatian','Doberman Pinscher','French Bulldog','German Shepherd','German Shorthaired Pointer','Golden Retriever','Great Dane','Great Pyrenees','Greyhound','Havanese','Irish Setter','Italian Greyhound','Jack Russell Terrier','Labrador Retriever','Lhasa Apso','Maltese','Mastiff','Miniature Pinscher','Miniature Schnauzer','Mixed Breed','Newfoundland','Old English Sheepdog','Papillon','Pekingese','Pembroke Welsh Corgi','Pomeranian','Poodle (Miniature)','Poodle (Standard)','Poodle (Toy)','Portuguese Water Dog','Pug','Rhodesian Ridgeback','Rottweiler','Saint Bernard','Samoyed','Scottish Terrier','Shetland Sheepdog','Shiba Inu','Shih Tzu','Siberian Husky','Staffordshire Bull Terrier','Vizsla','Weimaraner','West Highland White Terrier','Whippet','Yorkshire Terrier'];
+let breedFocusIdx=-1;
+function filterBreeds(inp,ddId){
+  const q=inp.value.toLowerCase().trim(),dd=document.getElementById(ddId);
+  breedFocusIdx=-1;
+  if(!q){dd.style.display='none';return;}
+  const m=BREEDS.filter(b=>b.toLowerCase().includes(q)).slice(0,10);
+  if(!m.length){dd.style.display='none';return;}
+  dd.innerHTML=m.map((b,i)=>`<div class="breed-opt" data-idx="${i}" onclick="selectBreed('${b.replace(/'/g,"\\'")}','mg-breed','${ddId}')">${b}</div>`).join('');
+  dd.style.display='block';
+}
+function selectBreed(b,inputId,ddId){document.getElementById(inputId).value=b;document.getElementById(ddId).style.display='none';breedFocusIdx=-1;}
+function breedKey(e,ddId,inputId){
+  const dd=document.getElementById(ddId),opts=dd.querySelectorAll('.breed-opt');
+  if(!opts.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();breedFocusIdx=Math.min(breedFocusIdx+1,opts.length-1);}
+  else if(e.key==='ArrowUp'){e.preventDefault();breedFocusIdx=Math.max(breedFocusIdx-1,0);}
+  else if(e.key==='Enter'&&breedFocusIdx>=0){e.preventDefault();opts[breedFocusIdx].click();return;}
+  else if(e.key==='Escape'){dd.style.display='none';return;}
+  opts.forEach((o,i)=>o.classList.toggle('focused',i===breedFocusIdx));
+  if(breedFocusIdx>=0)opts[breedFocusIdx].scrollIntoView({block:'nearest'});
+}
+document.addEventListener('click',e=>{if(!e.target.closest('.breed-wrap')){const d=document.getElementById('mg-breed-dd');if(d)d.style.display='none';}});
+</script>
+</body>
+</html>
