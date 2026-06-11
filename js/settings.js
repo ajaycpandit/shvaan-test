@@ -10,6 +10,7 @@ function renderSettings() {
   document.getElementById('s-cap').value=s.capacity||12;
   const lp=document.getElementById('logo-preview'); if(lp) lp.src=pendingLogo||currentLogo();
   updateScPrev();
+  if(typeof renderThemePicker === 'function') renderThemePicker();
   // Team management — admin only
   const tc=document.getElementById('team-card');
   if(tc){ if(isAdmin()){ tc.style.display=''; renderTeamList(); tmRenderPerms(); tmRoleChange(); } else { tc.style.display='none'; } }
@@ -105,7 +106,8 @@ async function saveSettings() {
     bizEmail:document.getElementById('s-be').value.trim(),
     bizAddr:document.getElementById('s-ba').value.trim(),
     capacity:parseInt(document.getElementById('s-cap').value)||DEF.capacity,
-    logo: pendingLogo==='__default__' ? null : (pendingLogo || settings.logo || null)
+    logo: pendingLogo==='__default__' ? null : (pendingLogo || settings.logo || null),
+    theme: settings.theme || 'terracotta'
   };
   setSyncState('busy');
   try { await dbSaveSettings(settings); try{ if(settings.logo) localStorage.setItem('shvaan_logo', settings.logo); else localStorage.removeItem('shvaan_logo'); }catch(e){} pendingLogo=null; applyLogo(); setSyncState('ok'); toast('Settings saved!'); recalc(); }

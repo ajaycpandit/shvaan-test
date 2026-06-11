@@ -34,6 +34,7 @@ async function init() {
     updateBadges();
     renderDashboard();
     renderRightPanel();
+    loadTheme();
     setSyncState('ok');
   } catch(e) {
     setLoadStatus('⚠️ Could not connect: ' + e.message);
