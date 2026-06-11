@@ -17,7 +17,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);m
 
 /* ── Layout ── */
 .app{display:flex;flex-direction:column;min-height:100vh}
-
 /* top nav */
 .topnav{background:var(--brown-dark);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:56px;position:sticky;top:0;z-index:300;gap:16px}
 .tn-left{display:flex;align-items:center;gap:0;min-width:0;flex:1}
@@ -39,7 +38,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);m
 .ni-badge{position:absolute;top:3px;right:3px;background:var(--danger);color:white;border-radius:99px;font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center}
 
 /* app body: main + right panel */
-.app-body{display:flex;flex:1;min-height:0;align-items:flex-start}
+.app-body{display:flex;flex:1;min-height:0;align-items:flex-start;flex-direction:row}
 
 /* right panel */
 .right-panel{width:240px;flex-shrink:0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;background:var(--white);border-left:1px solid var(--cream-dark);padding:16px 14px;display:flex;flex-direction:column;gap:0}
@@ -150,7 +149,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);m
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 .mtb{display:none}
 .bn{display:none}
-.main{overflow-y:auto;overflow-x:hidden}
+.main{flex:1;min-width:0;overflow-y:auto;overflow-x:hidden}
 .pg{display:none;padding:36px 44px;max-width:860px;animation:fi .18s ease}
 .pg.active{display:block}
 @keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
