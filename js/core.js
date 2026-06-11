@@ -9,13 +9,13 @@ async function sbFetch(path, method='GET', body=null, _retried=false) {
   const opts = {
     method,
     headers: {
-  'apikey': SB_KEY,
-  'Authorization': 'Bearer ' + (authToken || SB_KEY),
-  'Content-Type': 'application/json',
-  'Prefer': method === 'POST' ? 'return=representation' : '',
-  'Accept-Profile': 'test',
-  'Content-Profile': 'test'
-   },
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + (authToken || SB_KEY),
+      'Content-Type': 'application/json',
+      'Prefer': method === 'POST' ? 'return=representation' : '',
+      'Accept-Profile': 'test',
+      'Content-Profile': 'test'
+    }
   };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(SB_URL + '/rest/v1/' + path, opts);
