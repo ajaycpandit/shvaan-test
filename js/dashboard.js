@@ -100,3 +100,45 @@ function renderDashboard(){
     `<div class="card" style="margin:0"><div class="ct" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>Vaccination Watch</div>${vaccHtml}</div>`+
     `<div class="card" style="margin:0"><div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Recent Activity</div>${actHtml}</div>`;
 }
+
+/* ── Right panel ──────────────────────────────────────────── */
+function renderRightPanel() {
+  const now = new Date();
+  const tod = d => { const x=new Date(d); return x.getFullYear()===now.getFullYear()&&x.getMonth()===now.getMonth()&&x.getDate()===now.getDate(); };
+  const soon = d => { const x=new Date(d); const diff=(x-now)/86400000; return diff>0&&diff<=3; };
+
+  const active   = requests.filter(r=>r.status==='checked_in');
+  const cinsToday  = requests.filter(r=>r.status==='confirmed'&&tod(r.checkin));
+  const coutsToday = requests.filter(r=>r.status==='checked_in'&&tod(r.checkout));
+  const upcoming   = requests.filter(r=>r.status==='confirmed'&&!tod(r.checkin)&&soon(r.checkin));
+
+  // Stats
+  const pending = requests.filter(r=>r.status==='pending').length;
+  document.getElementById('rp-stats').innerHTML =
+    `<div class="rp-stat"><div class="rp-stat-num">${active.length}</div><div class="rp-stat-lbl">In stay</div></div>`+
+    `<div class="rp-stat"><div class="rp-stat-num">${pending}</div><div class="rp-stat-lbl">Pending</div></div>`+
+    `<div class="rp-stat"><div class="rp-stat-num">${cinsToday.length}</div><div class="rp-stat-lbl">Arriving</div></div>`+
+    `<div class="rp-stat"><div class="rp-stat-num">${coutsToday.length}</div><div class="rp-stat-lbl">Departing</div></div>`;
+
+  // Check-ins today
+  const cinEl = document.getElementById('rp-checkins');
+  cinEl.innerHTML = cinsToday.length
+    ? cinsToday.map(r=>`<div class="rp-item" onclick="goPage('calendar')"><span class="rp-item-dot in"></span>${esc(r.dog_name||r.owner_name)}</div>`).join('')
+    : '<div class="rp-empty">None today</div>';
+
+  // Check-outs today
+  const coutEl = document.getElementById('rp-checkouts');
+  coutEl.innerHTML = coutsToday.length
+    ? coutsToday.map(r=>`<div class="rp-item" onclick="goPage('calendar')"><span class="rp-item-dot out"></span>${esc(r.dog_name||r.owner_name)}</div>`).join('')
+    : '<div class="rp-empty">None today</div>';
+
+  // Arriving soon (next 3 days)
+  const upEl = document.getElementById('rp-upcoming');
+  upEl.innerHTML = upcoming.length
+    ? upcoming.map(r=>{
+        const d=new Date(r.checkin);
+        const label=d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+        return `<div class="rp-item" onclick="goPage('calendar')"><span class="rp-item-dot soon"></span><span style="flex:1">${esc(r.dog_name||r.owner_name)}</span><span style="font-size:10px;color:var(--ink-faint)">${label}</span></div>`;
+      }).join('')
+    : '<div class="rp-empty">Nothing in next 3 days</div>';
+}

@@ -33,6 +33,7 @@ async function init() {
     renderReqDD();
     updateBadges();
     renderDashboard();
+    renderRightPanel();
     setSyncState('ok');
   } catch(e) {
     setLoadStatus('⚠️ Could not connect: ' + e.message);
@@ -81,6 +82,7 @@ function goPage(id) {
   if(id==='calendar'){ renderCalendar(); renderUpcoming(); if(calViewMode==='list') renderCalList(); }
   if(id==='requests'){ renderReqDD(); renderRequests(); }
   if(id==='finance'){ if(!document.getElementById('fin-from').value) finPreset('3m'); else renderFinance(); }
+  renderRightPanel();
 }
 function refreshActive(){
   const active=document.querySelector('.pg.active');

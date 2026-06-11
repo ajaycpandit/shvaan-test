@@ -16,20 +16,50 @@ html{font-size:16px;scroll-behavior:smooth;-webkit-text-size-adjust:100%}
 body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;line-height:1.6}
 
 /* ── Layout ── */
-.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
-.sb{background:var(--brown-dark);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-.sb-brand{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
-.sb-paw{font-size:26px;display:block;margin-bottom:4px}
-.sb-name{font-family:'DM Serif Display',serif;font-size:18px;color:var(--cream);line-height:1.1}
-.sb-tag{font-size:10px;color:var(--brown-light);margin-top:3px;letter-spacing:.06em;text-transform:uppercase}
-.sb-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px}
-.ni{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r2);cursor:pointer;font-size:14px;font-weight:400;color:var(--brown-light);transition:background .15s,color .15s;border:none;background:none;text-align:left;width:100%;font-family:'DM Sans',sans-serif;min-height:44px}
-.ni:hover{background:rgba(255,255,255,.07);color:var(--cream)}
-.ni.active{background:rgba(255,255,255,.13);color:var(--cream);font-weight:600}
-.ni svg{width:18px;height:18px;flex-shrink:0;opacity:.8}
+.app{display:flex;flex-direction:column;min-height:100vh}
+
+/* top nav */
+.topnav{background:var(--brown-dark);display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:56px;position:sticky;top:0;z-index:300;gap:16px}
+.tn-left{display:flex;align-items:center;gap:0;min-width:0;flex:1}
+.tn-logo{height:38px;width:120px;object-fit:contain;background:white;border-radius:6px;padding:4px 8px;flex-shrink:0;margin-right:14px}
+.tn-nav{display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tn-nav::-webkit-scrollbar{display:none}
+.tn-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.tn-notif-btn{background:none;width:36px;height:36px}
+.tn-notif-btn svg{color:var(--brown-light)}
+.tn-logout{display:flex;align-items:center;gap:5px;background:none;border:1px solid rgba(255,255,255,.15);border-radius:var(--r2);padding:6px 11px;cursor:pointer;color:rgba(255,255,255,.65);font-family:'DM Sans',sans-serif;font-size:12px;white-space:nowrap;transition:background .15s}
+.tn-logout:hover{background:rgba(255,255,255,.08);color:var(--cream)}
+
+/* nav items in top nav */
+.ni{display:flex;align-items:center;gap:7px;padding:7px 11px;border-radius:var(--r2);cursor:pointer;font-size:13px;font-weight:400;color:rgba(255,255,255,.6);transition:background .15s,color .15s;border:none;background:none;white-space:nowrap;font-family:'DM Sans',sans-serif;position:relative}
+.ni:hover{background:rgba(255,255,255,.08);color:var(--cream)}
+.ni.active{background:rgba(255,255,255,.15);color:var(--cream);font-weight:600}
+.ni svg{width:15px;height:15px;flex-shrink:0;opacity:.8}
 .ni.active svg{opacity:1}
-.ni{position:relative}
-.ni-badge{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:var(--danger);color:white;border-radius:99px;font-size:10px;font-weight:700;padding:1px 6px;min-width:18px;text-align:center}
+.ni-badge{position:absolute;top:3px;right:3px;background:var(--danger);color:white;border-radius:99px;font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center}
+
+/* app body: main + right panel */
+.app-body{display:flex;flex:1;min-height:0;align-items:flex-start}
+
+/* right panel */
+.right-panel{width:240px;flex-shrink:0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;background:var(--white);border-left:1px solid var(--cream-dark);padding:16px 14px;display:flex;flex-direction:column;gap:0}
+.rp-section{margin-bottom:20px}
+.rp-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);margin-bottom:8px}
+.rp-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.rp-stat{background:var(--cream-mid);border-radius:var(--r2);padding:9px 10px;text-align:center}
+.rp-stat-num{font-size:22px;font-weight:700;color:var(--brown-dark);line-height:1}
+.rp-stat-lbl{font-size:10px;color:var(--ink-faint);margin-top:3px}
+.rp-list{display:flex;flex-direction:column;gap:5px}
+.rp-item{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--cream-mid);border-radius:var(--r2);font-size:12px;color:var(--ink-mid);cursor:pointer;transition:background .12s}
+.rp-item:hover{background:var(--cream-dark)}
+.rp-item-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.rp-item-dot.in{background:#6A8F6B}
+.rp-item-dot.out{background:var(--gold)}
+.rp-item-dot.soon{background:var(--blue)}
+.rp-empty{font-size:12px;color:var(--ink-faint);font-style:italic;padding:4px 2px}
+
+/* sidebar legacy (keep for any refs) */
+.sb-foot{padding:14px 20px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:rgba(196,168,130,.5);text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
 .bni{position:relative}
 .bni-badge{position:absolute;top:6px;right:calc(50% - 18px);background:var(--danger);color:white;border-radius:99px;font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center}
 :root{--blue:#1A56A0;--bluep:#EBF2FB}
@@ -127,8 +157,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);m
 
 /* ── Mobile ── */
 @media(max-width:700px){
-  .app{grid-template-columns:1fr;min-height:100dvh}
-  .sb{display:none}
+  .app{min-height:100dvh}
+  .topnav{display:none}
+  .right-panel{display:none}
+  .app-body{display:block}
   .mtb{display:flex;align-items:center;justify-content:space-between;background:var(--brown-dark);padding:13px 16px;padding-top:calc(13px + env(safe-area-inset-top));position:sticky;top:0;z-index:100}
   .mtb-name{font-family:'DM Serif Display',serif;font-size:17px;color:var(--cream)}
   .mtb-sync{font-size:11px;color:var(--brown-light);display:flex;align-items:center;gap:5px}
@@ -383,7 +415,7 @@ input:focus, select:focus, textarea:focus{ outline:none; }
 /* Smooth scrolling within scroll containers */
 .main{ scroll-behavior:smooth; }
 /* Print niceties: hide nav/sidebar when printing anything */
-@media print{ .sb, .bn, .mtb, .notif-wrap{ display:none !important; } }
+@media print{ .topnav, .right-panel, .bn, .mtb, .notif-wrap{ display:none !important; } }
 
 /* ── Stay Photos gallery ── */
 .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
