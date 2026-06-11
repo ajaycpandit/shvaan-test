@@ -129,6 +129,12 @@ function applyTheme(key) {
   let el = document.getElementById('shvaan-theme');
   if (!el) { el = document.createElement('style'); el.id = 'shvaan-theme'; document.head.appendChild(el); }
   el.textContent = THEMES[key].css;
+  // Also update loading screen background to match theme instantly
+  const loadingColors = {
+    terracotta:'#C25E18',teal:'#085041',sage:'#3B6D11',navy:'#0C447C',charcoal:'#2C2C2A'
+  };
+  const ld = document.getElementById('loading');
+  if (ld) ld.style.background = loadingColors[key] || loadingColors.terracotta;
   try { localStorage.setItem('shvaan_theme', key); } catch(e) {}
   renderThemePicker();
 }

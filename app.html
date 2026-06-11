@@ -8,6 +8,16 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<script>
+(function(){
+  var themes={
+    terracotta:'#C25E18',teal:'#085041',sage:'#3B6D11',navy:'#0C447C',charcoal:'#2C2C2A'
+  };
+  var key=localStorage.getItem('shvaan_theme')||'terracotta';
+  var col=themes[key]||themes.terracotta;
+  document.write('<style>#loading{background:'+col+' !important}</style>');
+})();
+</script>
 </head>
 <body>
 
@@ -63,13 +73,14 @@
         <button class="ni" onclick="goPage('dogs')" id="ni-dogs">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Dogs
         </button>
-        <button class="ni" onclick="goPage('history')" id="ni-history">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History
-        </button>
         <button class="ni" onclick="goPage('finance')" id="ni-finance">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Finance
         </button>
-        <button class="ni" onclick="goPage('settings')" id="ni-settings">
+        <div class="ni-sep"></div>
+        <button class="ni ni-util" onclick="goPage('history')" id="ni-history">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>History
+        </button>
+        <button class="ni ni-util" onclick="goPage('settings')" id="ni-settings">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>Settings
         </button>
       </nav>
