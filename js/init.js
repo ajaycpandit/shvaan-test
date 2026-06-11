@@ -83,6 +83,8 @@ function goPage(id) {
   if(id==='calendar'){ renderCalendar(); renderUpcoming(); if(calViewMode==='list') renderCalList(); }
   if(id==='requests'){ renderReqDD(); renderRequests(); }
   if(id==='finance'){ if(!document.getElementById('fin-from').value) finPreset('3m'); else renderFinance(); }
+  const rp = document.getElementById('right-panel');
+  if(rp) rp.style.display = (id==='settings') ? 'none' : '';
   renderRightPanel();
 }
 function refreshActive(){

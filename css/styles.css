@@ -45,7 +45,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);m
 .app-body{display:flex;flex:1;align-items:flex-start;flex-direction:row;min-height:calc(100vh - 56px)}
 
 /* right panel */
-.right-panel{width:240px;flex-shrink:0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;background:var(--white);border-left:1px solid var(--cream-dark);padding:16px 14px;display:flex;flex-direction:column;gap:0}
+.right-panel{width:220px;flex-shrink:0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;background:var(--white);border-left:1px solid var(--cream-dark);padding:16px 14px;display:flex;flex-direction:column;gap:0;align-self:flex-start}
 .rp-section{margin-bottom:20px}
 .rp-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-faint);margin-bottom:8px}
 .rp-stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}
