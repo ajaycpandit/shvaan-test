@@ -1,141 +1,168 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<title>Shvaan Pet Care — Loving Dog Boarding &amp; Day Care in Austin, TX</title>
-<meta name="description" content="Small-setting dog boarding and day care in Austin, TX. Safe, attentive, home-style care where your dog is treated like family.">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="site.css">
-</head>
-<body>
-<header class="site">
-  <div class="wrap nav">
-    <a class="nav-logo" href="index.html"><img src="data:image/png;base64,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" alt="Shvaan Pet Care"></a>
-    <nav class="nav-links"><a href="index.html" class="active">Home</a><a href="services.html">Services</a><a href="about.html">About</a><a href="contact.html">Contact</a></nav>
-    <div class="nav-cta">
-      <a class="btn btn-ghost btn-sm" href="app.html">Client Login</a>
-      <a class="btn btn-primary btn-sm" href="book.html">Meet &amp; Greet</a>
-      <button class="menu-toggle" onclick="document.getElementById('mm').classList.toggle('open')" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-    </div>
-  </div>
-  <div class="mobile-menu" id="mm">
-    <a href="index.html">Home</a><a href="services.html">Services</a><a href="about.html">About</a><a href="contact.html">Contact</a>
-    <a class="btn btn-ghost" href="app.html">Client Login</a>
-    <a class="btn btn-primary" href="book.html">Meet &amp; Greet</a>
-  </div>
-</header>
+/* Shvaan Pet Care — marketing site styles (brand-matched to the app) */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#FBF6EF;--cream-mid:#F5ECE0;--cream-dark:#EAD9C6;
+  --brown-light:#F0A868;--brown:#E07B2E;--brown-dark:#C25E18;
+  --forest:#3C6E47;--forest-pale:#EAF2EC;
+  --ink:#2A211A;--ink-mid:#4F4339;--ink-light:#7E6F61;--ink-faint:#B3A595;
+  --white:#FFFFFF;--coral:#E8674C;--gold:#C8841C;
+  --r2:10px;--r3:16px;--r4:22px;--r5:30px;
+  --s1:0 1px 4px rgba(42,33,26,.07);--s2:0 6px 22px rgba(42,33,26,.10);--s3:0 14px 44px rgba(42,33,26,.16);
+  --maxw:1140px;
+}
+html{font-size:16px;scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);line-height:1.65;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{font-family:'DM Serif Display',serif;font-weight:400;line-height:1.15;color:var(--ink)}
+.serif{font-family:'DM Serif Display',serif}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+.muted{color:var(--ink-light)}
 
-<section class="hero">
-  <div class="wrap hero-grid">
-    <div class="hero-text">
-      <span class="tag">🐾 Trusted dog boarding &amp; day care · Austin, TX</span>
-      <h1>A loving home away from home for your dog</h1>
-      <p class="lead">At Shvaan Pet Care, your dog gets personal attention, plenty of play, and a safe, comfortable space — not a crowded kennel. Small numbers mean every pup gets the care they deserve.</p>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
-        <a class="btn btn-primary" href="book.html">Schedule a Meet &amp; Greet</a>
-        <a class="btn btn-ghost" href="services.html">See Our Services</a>
-      </div>
-    </div>
-    <div class="hero-photo"><img src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=900&q=80&fit=crop" alt="Happy dog enjoying a stay at Shvaan Pet Care" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r3)"></div>
-  </div>
-</section>
+/* ── Header ── */
+header.site{position:sticky;top:0;z-index:100;background:rgba(251,246,239,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--cream-dark)}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;height:70px}
+.nav-logo img{height:46px;width:auto;object-fit:contain}
+.nav-links{display:flex;align-items:center;gap:26px}
+.nav-links a{font-size:15px;font-weight:500;color:var(--ink-mid);transition:color .15s}
+.nav-links a:hover,.nav-links a.active{color:var(--brown-dark)}
+.nav-cta{display:flex;align-items:center;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 22px;border-radius:99px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;border:1.5px solid transparent;transition:all .18s;white-space:nowrap}
+.btn svg{width:17px;height:17px}
+.btn-primary{background:var(--brown);color:#fff;border-color:var(--brown);box-shadow:0 4px 14px rgba(224,123,46,.3)}
+.btn-primary:hover{background:var(--brown-dark);box-shadow:0 6px 20px rgba(224,123,46,.4);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--ink-mid);border-color:var(--cream-dark)}
+.btn-ghost:hover{border-color:var(--brown);color:var(--brown-dark)}
+.btn-white{background:#fff;color:var(--brown-dark);border-color:#fff}
+.btn-white:hover{transform:translateY(-1px);box-shadow:var(--s2)}
+.btn-sm{height:40px;padding:0 16px;font-size:14px}
+.menu-toggle{display:none;background:none;border:none;cursor:pointer;padding:6px}
+.menu-toggle svg{width:26px;height:26px;color:var(--ink)}
+.mobile-menu{display:none}
 
-<section>
-  <div class="wrap">
-    <div class="values">
-      <div class="value"><div class="vico">🏡</div><h3>Home-style care</h3><p>A small, warm setting where your dog sleeps, plays, and relaxes just like they would at home — never caged or kennelled.</p></div>
-      <div class="value"><div class="vico">💉</div><h3>Vaccinated guests only</h3><p>Rabies, DHPP, and Bordetella are required for every guest, so the whole crew stays healthy and you have peace of mind.</p></div>
-      <div class="value"><div class="vico">📸</div><h3>Stay updates</h3><p>We send photos throughout the stay so you can see your pup having the time of their life — even while you're away.</p></div>
-      <div class="value"><div class="vico">❤️</div><h3>Experienced &amp; caring</h3><p>Years of hands-on experience with dogs of all breeds, sizes, and personalities. Your dog's comfort and safety come first, always.</p></div>
-    </div>
-  </div>
-</section>
+/* ── Hero ── */
+.hero{background:linear-gradient(160deg,#FCEEDF 0%,var(--cream) 60%);padding:70px 0 80px;position:relative;overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center}
+.hero h1{font-size:clamp(34px,5vw,56px);margin-bottom:18px}
+.hero .tag{display:inline-block;background:var(--forest-pale);color:var(--forest);font-size:13px;font-weight:600;padding:6px 14px;border-radius:99px;margin-bottom:20px;letter-spacing:.02em}
+.hero p.lead{font-size:18px;color:var(--ink-light);margin-bottom:28px;max-width:90%}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap}
+.hero-photo{border-radius:var(--r5);overflow:hidden;box-shadow:var(--s3);aspect-ratio:4/3;background:var(--cream-mid)}
+.hero-photo img{width:100%;height:100%;object-fit:cover}
+.ph{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--ink-faint);text-align:center;background:repeating-linear-gradient(45deg,var(--cream-mid),var(--cream-mid) 14px,#efe4d4 14px,#efe4d4 28px)}
+.ph .ico{font-size:42px}
+.ph small{font-size:12px;max-width:80%}
 
-<section class="alt">
-  <div class="wrap">
-    <div class="section-head"><span class="tag">Our Services</span><h2>Care tailored to your dog</h2><p>Whether it's a full overnight stay or a fun-filled day while you're at work, we've got your best friend covered.</p></div>
-    <div class="cards">
-      <div class="card"><div class="card-photo"><img src="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?w=700&q=80&fit=crop" alt="Dog boarding at Shvaan Pet Care" style="width:100%;height:100%;object-fit:cover"></div><div class="card-body"><h3>🏡 Boarding</h3><p>Overnight stays in a comfortable, supervised, home-style environment. Your dog sleeps easy; so do you.</p><div class="price">$55 / night</div><a class="btn btn-ghost btn-sm" href="services.html">Learn more</a></div></div>
-      <div class="card"><div class="card-photo"><img src="https://images.unsplash.com/photo-1601758125946-6ec2ef64daf8?w=700&q=80&fit=crop" alt="Dog day care at Shvaan Pet Care" style="width:100%;height:100%;object-fit:cover"></div><div class="card-body"><h3>☀️ Day Care</h3><p>Daytime play, socialization, and rest while you work or run errands. Pick up a happy, tired pup.</p><div class="price">$35 / day</div><a class="btn btn-ghost btn-sm" href="services.html">Learn more</a></div></div>
-    </div>
-  </div>
-</section>
+/* ── Sections ── */
+section{padding:70px 0}
+.section-head{text-align:center;max-width:640px;margin:0 auto 46px}
+.section-head .tag{display:inline-block;background:var(--cream-dark);color:var(--brown-dark);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:5px 13px;border-radius:99px;margin-bottom:14px}
+.section-head h2{font-size:clamp(28px,4vw,40px);margin-bottom:12px}
+.section-head p{font-size:17px;color:var(--ink-light)}
+.alt{background:var(--white)}
 
-<section>
-  <div class="wrap">
-    <div class="split">
-      <div class="split-photo"><img src="https://images.unsplash.com/photo-1544568100-847a948585b9?w=800&q=80&fit=crop" alt="Dog receiving loving care at Shvaan Pet Care" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r3)"></div>
-      <div class="split-text">
-        <h2>Why families trust us with their dogs</h2>
-        <p>We started Shvaan Pet Care because we believe every dog deserves to feel safe, loved, and at ease — even when their family is away. We keep our numbers intentionally small so we can give every guest the attention and affection they need.</p>
-        <p>From feeding on your dog's exact schedule to sending you unprompted photo updates, we take the details seriously. Your peace of mind matters as much as your dog's happiness.</p>
-        <a class="btn btn-ghost" href="about.html">More about us</a>
-      </div>
-    </div>
-  </div>
-</section>
+/* ── Value strip ── */
+.values{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.value{text-align:center;padding:10px}
+.value .vico{width:60px;height:60px;border-radius:50%;background:var(--cream-mid);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px}
+.value h3{font-family:'DM Sans',sans-serif;font-weight:600;font-size:17px;margin-bottom:6px}
+.value p{font-size:14px;color:var(--ink-light)}
 
-<section class="alt">
-  <div class="wrap">
-    <div class="section-head"><span class="tag">Kind Words</span><h2>Happy dogs, happy owners</h2><p>Don't take our word for it — here's what our clients say.</p></div>
-    <div class="quotes">
-      <div class="quote"><div class="stars">★★★★★</div><p>"Leaving our dog for the first time was nerve-wracking, but the photo updates throughout the stay put us completely at ease. Biscuit came home happy and well-rested — we'll be back!"</p><div class="who">— Priya M. &amp; Biscuit</div></div>
-      <div class="quote"><div class="stars">★★★★★</div><p>"We've tried a few boarding options in Austin and nothing compares. The home environment makes such a difference — our boy Cooper acts like he's visiting a friend, not a stranger."</p><div class="who">— Marcus T. &amp; Cooper</div></div>
-      <div class="quote"><div class="stars">★★★★★</div><p>"Day care three times a week and our anxious rescue has completely come out of her shell. The patience and genuine care here is something special."</p><div class="who">— Leila K. &amp; Nala</div></div>
-    </div>
-  </div>
-</section>
+/* ── Service cards ── */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.card{background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--r4);overflow:hidden;box-shadow:var(--s1);transition:transform .2s,box-shadow .2s}
+.card:hover{transform:translateY(-3px);box-shadow:var(--s2)}
+.card-photo{aspect-ratio:16/10;background:var(--cream-mid)}
+.card-photo img{width:100%;height:100%;object-fit:cover}
+.card-body{padding:26px}
+.card-body h3{font-size:24px;margin-bottom:8px}
+.card-body .price{color:var(--brown-dark);font-weight:700;font-size:16px;margin:10px 0 14px}
+.card-body ul{list-style:none;margin:14px 0 0}
+.card-body li{font-size:15px;color:var(--ink-mid);padding:6px 0 6px 26px;position:relative}
+.card-body li::before{content:'🐾';position:absolute;left:0;font-size:13px}
 
-<section>
-  <div class="wrap">
-    <div class="cta-band">
-      <h2>Ready to give your dog a great stay?</h2>
-      <p>New clients start with a meet &amp; greet so we can get to know your pup. It's quick, free, and the first step to worry-free boarding.</p>
-      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-        <a class="btn btn-primary" href="book.html">Schedule a Meet &amp; Greet</a>
-        <a class="btn btn-white" href="contact.html">Contact Us</a>
-      </div>
-    </div>
-  </div>
-</section>
+/* ── About blocks ── */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:46px;align-items:center}
+.split.reverse .split-text{order:2}
+.split-photo{border-radius:var(--r4);overflow:hidden;box-shadow:var(--s2);aspect-ratio:4/3;background:var(--cream-mid)}
+.split-photo img{width:100%;height:100%;object-fit:cover}
+.split-text h2{font-size:clamp(26px,3.5vw,36px);margin-bottom:16px}
+.split-text p{font-size:16px;color:var(--ink-light);margin-bottom:14px}
 
-<footer class="site">
-  <div class="wrap">
-    <div class="f-grid">
-      <div>
-        <img class="f-logo" src="data:image/png;base64,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" alt="Shvaan Pet Care">
-        <p>Loving, attentive dog boarding &amp; day care in Austin, TX.</p>
-      </div>
-      <div>
-        <h4>Explore</h4>
-        <div class="f-links">
-          <a href="index.html">Home</a><a href="services.html">Services</a>
-          <a href="about.html">About</a><a href="contact.html">Contact</a>
-          <a href="book.html">Meet &amp; Greet</a><a href="app.html">Client Login</a>
-        </div>
-      </div>
-      <div>
-        <h4>Get in touch</h4>
-        <div class="f-links">
-          <a href="tel:+15125550000">📞 (512) 555-0000</a>
-          <a href="mailto:hello@shvaanpetcare.com">✉️ hello@shvaanpetcare.com</a>
-          <a href="#">📍 Serving Austin, TX &amp; surrounding areas</a>
-          <a href="#">🕑 Mon–Sun, 7 am – 7 pm</a>
-        </div>
-        <div class="socials" style="margin-top:14px">
-          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
-          <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
-        </div>
-      </div>
-    </div>
-    <div class="f-bottom">
-      <span>© <span id="yr"></span> Shvaan Pet Care. All rights reserved.</span>
-      <span>Made with 🐾 for happy dogs</span>
-    </div>
-  </div>
-</footer>
-<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
-</body>
-</html>
+/* ── Trust / requirements ── */
+.reqs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+.req{background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--r3);padding:22px}
+.req h3{font-family:'DM Sans',sans-serif;font-weight:600;font-size:16px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.req p{font-size:14px;color:var(--ink-light)}
+
+/* ── CTA band ── */
+.cta-band{background:linear-gradient(135deg,var(--brown) 0%,var(--brown-dark) 100%);color:#fff;border-radius:var(--r5);padding:54px 40px;text-align:center;box-shadow:var(--s2)}
+.cta-band h2{color:#fff;font-size:clamp(26px,4vw,38px);margin-bottom:12px}
+.cta-band p{font-size:17px;opacity:.92;margin-bottom:26px;max-width:520px;margin-left:auto;margin-right:auto}
+.cta-band .btn-primary{background:#fff;color:var(--brown-dark);border-color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.cta-band .btn-primary:hover{background:var(--cream)}
+
+/* ── Testimonials ── */
+.quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px}
+.quote{background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--r4);padding:28px;box-shadow:var(--s1)}
+.quote .stars{color:var(--gold);font-size:15px;margin-bottom:12px}
+.quote p{font-size:15px;color:var(--ink-mid);font-style:italic;margin-bottom:14px}
+.quote .who{font-weight:600;font-size:14px;color:var(--ink)}
+
+/* ── FAQ ── */
+.faq{max-width:760px;margin:0 auto}
+.faq details{background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--r3);margin-bottom:12px;overflow:hidden}
+.faq summary{padding:18px 22px;font-weight:600;font-size:16px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';font-size:22px;color:var(--brown);font-weight:400}
+.faq details[open] summary::after{content:'\2212'}
+.faq details p{padding:0 22px 18px;color:var(--ink-light);font-size:15px}
+
+/* ── Contact ── */
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+.contact-info .row{display:flex;gap:14px;align-items:flex-start;margin-bottom:22px}
+.contact-info .ci-ico{width:46px;height:46px;border-radius:12px;background:var(--cream-mid);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.contact-info .ci-label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:2px}
+.contact-info .ci-val{font-size:16px;color:var(--ink)}
+.map-box{border-radius:var(--r4);overflow:hidden;box-shadow:var(--s1);aspect-ratio:4/3;background:var(--cream-mid);border:1px solid var(--cream-dark)}
+
+/* ── Footer ── */
+footer.site{background:var(--ink);color:#E8DDD0;padding:50px 0 26px;margin-top:20px}
+footer.site .f-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px;margin-bottom:34px}
+footer.site .f-logo{height:50px;width:auto;object-fit:contain;background:#fff;border-radius:8px;padding:6px;margin-bottom:14px}
+footer.site p{font-size:14px;color:#B9AB9B;line-height:1.7}
+footer.site h4{font-family:'DM Sans',sans-serif;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#fff;margin-bottom:14px}
+footer.site .f-links a{display:block;font-size:14px;color:#B9AB9B;padding:5px 0;transition:color .15s}
+footer.site .f-links a:hover{color:#fff}
+footer.site .f-bottom{border-top:1px solid rgba(255,255,255,.12);padding-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:13px;color:#9A8C7C}
+footer.site .socials{display:flex;gap:12px}
+footer.site .socials a{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;transition:background .15s}
+footer.site .socials a:hover{background:var(--brown)}
+footer.site .socials svg{width:18px;height:18px;color:#fff}
+
+/* ── Page hero (inner pages) ── */
+.page-hero{background:linear-gradient(160deg,#FCEEDF,var(--cream));padding:54px 0;text-align:center}
+.page-hero h1{font-size:clamp(30px,4.5vw,46px);margin-bottom:10px}
+.page-hero p{font-size:17px;color:var(--ink-light);max-width:560px;margin:0 auto}
+
+/* ── Mobile ── */
+@media(max-width:880px){
+  .hero-grid,.split,.contact-grid{grid-template-columns:1fr}
+  .split.reverse .split-text{order:0}
+  .hero-photo{order:-1}
+  .values{grid-template-columns:1fr 1fr}
+  footer.site .f-grid{grid-template-columns:1fr;gap:28px}
+}
+@media(max-width:720px){
+  .nav-links,.nav-cta .btn:not(.menu-toggle){display:none}
+  .menu-toggle{display:block}
+  .nav-cta{gap:0}
+  .mobile-menu{display:none;flex-direction:column;gap:4px;padding:12px 22px 18px;background:var(--white);border-bottom:1px solid var(--cream-dark)}
+  .mobile-menu.open{display:flex}
+  .mobile-menu a{padding:11px 0;font-size:16px;font-weight:500;color:var(--ink-mid);border-bottom:1px solid var(--cream-mid)}
+  .mobile-menu .btn{margin-top:10px}
+  section{padding:50px 0}
+  .cta-band{padding:40px 24px}
+  .values{grid-template-columns:1fr 1fr;gap:14px}
+}
+@media(max-width:460px){ .values{grid-template-columns:1fr} }

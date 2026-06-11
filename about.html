@@ -1,173 +1,117 @@
-/* ═══════════════════════════════════════
-   CUSTOMER VIEW
-   Shown when the logged-in user's role is 'customer'.
-   Scoped to their own data via profile.owner_name.
-═══════════════════════════════════════ */
-let custTab='dogs';
-let custDogs=[], custBookings=[], custReqs=[];
-
-async function initCustomer(){
-  const appShell=document.getElementById('app-shell'); if(appShell) appShell.style.display='none';
-  const cs=document.getElementById('customer-shell'); if(cs) cs.style.display='';
-  applyLogo();
-  document.getElementById('loading').style.opacity='0';
-  setTimeout(()=>{ document.getElementById('loading').style.display='none'; },400);
-  try{
-    await loadCustomerData();
-    renderCustomerShell();
-    custGo('dogs');
-  }catch(e){
-    const el=document.getElementById('cust-body');
-    if(el) el.innerHTML='<div class="es"><span class="ei">⚠️</span><p>Could not load your account: '+esc(e.message)+'</p></div>';
-  }
-}
-
-async function loadCustomerData(){
-  const owner=(myProfile&&myProfile.owner_name)||'';
-  // Load global settings (for rates/invoice branding) + this owner's dogs, bookings, requests.
-  const s=await dbGetSettings(); if(s) settings={...DEF,...s};
-  try{ if(settings.logo) localStorage.setItem('shvaan_logo', settings.logo); }catch(e){}
-  const allDogs=await dbGetDogs();
-  custDogs=(allDogs||[]).filter(d=>(d.owner_name||'').toLowerCase()===owner.toLowerCase());
-  dogs=allDogs||[]; // needed by buildInv etc.
-  const allBookings=await dbGetBookings();
-  custBookings=(allBookings||[]).filter(b=>(b.entries||[]).some(e=>(e.ownerName||'').toLowerCase()===owner.toLowerCase()));
-  bookings=allBookings||[];
-  custReqs=(await dbGetReqs()||[]).filter(r=>(r.owner_name||'').toLowerCase()===owner.toLowerCase());
-}
-
-function renderCustomerShell(){
-  const body=document.getElementById('cust-body');
-  const owner=(myProfile&&myProfile.owner_name)||'there';
-  body.innerHTML=`
-    <div style="margin-bottom:18px">
-      <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink)">Welcome, ${esc(owner)}! 🐾</div>
-      <div style="font-size:13px;color:var(--ink-light);margin-top:2px">Manage your dogs, reservations, and invoices.</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>About — Shvaan Pet Care</title>
+<meta name="description" content="Learn about Shvaan Pet Care — who we are, why we care, and what makes our dog boarding and day care different in Austin, TX.">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header class="site">
+  <div class="wrap nav">
+    <a class="nav-logo" href="index.html"><img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCABPAMYDASIAAhEBAxEB/8QAHAABAAMBAQEBAQAAAAAAAAAAAAUGBwQDCAEC/8QAQRAAAQMEAQMCBAQDBAYLAAAAAQIDBAAFBhEhBxIxE0EiUWFxCBQygRVCkSNSobEWM4KDksE3Q2JydaKys9Hh8P/EABsBAAIDAQEBAAAAAAAAAAAAAAADAQIEBQYH/8QAMBEAAQQABAQEBQQDAAAAAAAAAQACAxEEEiExBUFRYRMicaEykbHh8BQjM4FC0dL/2gAMAwEAAhEDEQA/APsulKUISlKruc5lYsOt6ZV4kkOO7DEZodzrxH91Py+p0Bsc8ipAJNBVe9rBmcaCsVKyV3Oepd7k/kMfwF61l0FSJdy7glCPHcdhICvfXxfY10Dp7nF1T6mQ9Sbg2patrZtyC0gfQEFP/pq/h18RpZv1Wf8AjaT7fWlqVKy9XSeewUuW3qLlEd4H9TkguD+gKa5pb3VTBWVTJUiNmFmZJL2kdkltG+Vccn/za+g5qfDB+EqTiHt1ewgdtfv7LWaVnOG9ZMSyKe3b1qkWuU6rsaTLSAhw+wCwSAfvrZ4FaNVHMc00QmxTRzDMw2EpSlVTUpSlCEpSlCEpSlCEpSlCEpSlCEpSlCEpSlCEpSvxW+0686oQqHnudyIF2Ti2KW83fJHU7LY/1UUH+Zw/uDrjyNkbG+XHcRiYszLzfN7h/Fr200p56U58SIyQN9rST7+wOh8gBs75fw7MsO2G8Xd8FV6l3R4XFa0dq0rB2Efb4ifuo/Kpjr0op6S30gkfA0OPq8gU/Z2QLng54ziH60CQOQ+/4FacbuzN9sMK8RmnmmZjKXUIeSAsA+NgE1IVXcYcfh9NrY9Ejfmn2bO0tphJ16qwyCEg+2zx+9UvoTnGU5dNuzd9iN/l45BQ8hr0w2snlr68c/Me/kUvISCRsFoGIDSxjt3LVqUrI+qufZbj/US1WOxWxEqO80hwslkqXKUpSgUhXtoD28Hk7FQxheaCtPO2FuZyjLhidma6t3DEbnEC7TkkZc2EUpHdGkp2VltX8vCVkgcHaQQQKl7DkN66d3FGM5oqROs5BFtvCGyr4QP9W4Bs7Hj3I+o5HZ1NPZ1X6duJ2lan5SSR512o4/xP9ajvxGCWUWcju/KbdB14Dnw639db1+9GJnMcWar0+yfwPhbMdxAQZsvm37Vmr/XRWN3qfZ244lqtN8/Jk6TJ/KabVzrYJNTgyu1v4w/kFs9e5R2f1Nxm9uAgjYKTojQOzv25qIxPO8XvttahPOR4Ly0BlcN/SUnY12pJ4UPYD/CvfHsaRjGL3yG26hxp9199rt38LZQAlJJ8kAeaysc92oIIXcxGGw0RLJInMeCNCbDheutD5jRePTnOF5dOuLf5BMRqMlCm/wC07lHe974Hyq6V8/dIr+bI9c0xoEi4XCUhtEWKykkrI7iST7AD/wDfK5491MuD2RixXyzIgynVhprXcOxw/pCgdnRJHI+e6XBiQWDOdStvGOASsxUv6VnkaAavWqFmibOq06lZHI6nZSzlbWLu45AZuKnkskLkq7CpWu0g68EEH3/5VdeomQ3PGLIm7xLdHmR2lASkreKFIBICSnjnk8/5eddAxuBA6rwUfF8NJHJI0mo/i0OnXSr05qz0qgTuoEyz4zb5t5s2rtdXCmDb2HOVJ40VqP6f1Djk8jjzqAuvVHJ8WvcWLmWLsRYkjkORnu89u9EjkhRHHHBobE52yl3F8Kzcnleh0va9NL7rXqVFZPf7dj2PSL7cHFflGEBXwDal7ICQke5JIFZfd+qOcRLMzk6cJYbx9/tU24uR3udpOgVdp+HfsSnXI81aLDvl+Fb3SNbutlpVWtGaw7rgIy2Db5spAbJVDjpDjwWFdqkgb515+3P0qh4/1xRdrvJipxySR6G4cdhRefkvdwATwNJGiST7BJ8+KszCyvuhtugvaK13Wy0rF7Z1ku8PLWrLmONC0oeWlIUCoLaCjpKiFfqT8yNe/wBq2iqywPirMN1LXB2yUpSkqyUpShCya+KX006kKvyU6xnInUongDiLJ5059jsn91fIVP8AXopV0jvh2CChkg/75FWPM7HHyTF7hZZCUlMpkpQoj9C/KVfsoA/tWCXvLpN06f2jplMRKjZAZzNvmes3pKW0uaQdjz/1f37SfkTojGcg8wuZiHCBr2cnA16nl7381vOCpKcIsSVDRFtjgj/dpqRuEuJbYD86Y6hiMwguOuK8JSOSaicovlswnFP4jMZkKhRA2yER0BSgCQlOgSBxx7175baGslxSfZ1PllE6OUJdA32k8g69+dce9J3NnZbgcrcrdSAs2k/iAxdub6bNpuz0cHReCUJJHzCSr/MitGw3JrPltnTdrM8p1kLKFpWjtW2sAEpUPnojxxzXyPfsJySy5K3j0u3OLmvq7Ywa+JMgb0FIPuP8vfVfS3RHC5WF4ouNcHUqnTHvXeQg7S18IARv3I1yfmfps6Z4o2NBaVyuH4vFTTFso0G+lUqr1Vv8ZvrfhNvVyIToLhHsp9QQAft2pP2NT3Wm6uS2YuEWpUc3O7OtpWt4ApjtlWu7n+Y6Ovfg651Wc3HEHM26m5/GaWlU2OgLhuOKOkuhSNJ+xSlSefG9+1WOH04zLIJcvJMhnx7XeHXWy0y2SsIDaQAe5Kj28jfG6TiBljBbqRWnX81XR4QWy4stnJYxxPmF6UCAdNdwFKZd0hhqYdlY7IdadSCoRXT3pV/2Uq8j991y9GLtOk43frVJdW6xFjd7PeSS33JUCkb8DgED71Zm4vVJyH+Qfm4+2CnsVNSHC9r+8BoJ3+wr3x7CFY7i0y3WmYyu4zRp+VIaJSRrWgkHgAE62TyT9q5jYqkD2Noc17mTiRdgnYbFytkdbcp1NUdSTXT+1Tvw6hJuN4VodwaaAOudbVX8dQEpT1wsxCQCp+GSfmfUA/5VaOnGC3XEro7IVdYj8d9Ha82GFdx1vtIO+Ds/I8f1HPlGA368ZgMhbvMJhxlxCoyfQJ7Ag7Rvnk+5/wDjiqCJ4ga2tQVodxHCO4vNiPFGRzKB13oCtuyhvxE2V5k27LoHc2/GWll5aPKee5tX7HY39RXW7eEdSJuM2lpCTDDIud1AB7QUEoDX7rCuPkQa0G92gXzGJFnuim1KlR/TdW0jSQvX6kg71pWiN78CoHpTg6cLt0tt2Q3KlynQpbyElI7Ej4U8/IlR/f6V2BIMmu42XyWbhkw4g4s/ikov9W/9bH+1E9V8ms1ryGzQDjyL3fkrDkFK1diWVLV2pO/clQ4HsQDxxWefiG/0nUxYX8kXbUKWH/Sjwkq01+jfctR+In4fGgNe9aF1W6fXTIb5ByLH57Me5RUoSEvEhPwKKkrSQDyCfBGjx+8HmXTDNMoscV+8ZPHnXiOo9jKmw3HQhWu4ApSCVbA5I+n1psLmNLTaycQgxs5xEZYaNZaoAgVvzJ+asWZX2w2XpJbnMjgfxOPKix2kxSeXV9gV59taJ35Gqp2bTMwu/R2TPVAs1ix0sMLjw2Qpx9bPcntG+EpTyk8Df29567dNskv3TaPYL5fIT9yhOJchOIaIQhKUdvprUACoa/m7d/euCD01z244g7j2RZe23BZZDcOJFSCklP6PUX2BRQP7vPgHfGqdA6JjQ4uFg99uy9A3xHNFtI07e67Pws/9Hc7/AMUc/wDaaqlfhcSDn10JAJTb16OvH9q3V16WYP1AxG1XKCbxZUMvgrjs+mp5KXiUguKOkn9Kda2RvR+e3S3pdfcJyY3QXuBKYeaLMhv0FhRSSFbSd8HYHnfG6a+WP96nDzVSYxrqbpsqZ+KBKR1AtCgBswEbPz/tV19G1kvVDpdfs0ygXX+OwI7DLYajN/l1dyUgk/EdnZ2Tz9uK1C0IuDdtYRdXo701KdOuMIKEKPzAJJHFZcTIx0MbQbIu01gIcV1UpSsSYlKUoQlZRnfpX7rpiNlaaSv+FNuT5Kx/LvRSD9i2j/jFaDl2Q23F7DIvN0d7GGRwkfqcV7ISPcn/AO/AqkdELPOkruefX1rtud8XtlJGvSjjXaB9DofslJ96bH5QXLJiD4jmxDrZ9Br7lXXNcfi5TjE6xTFqQ3KRoLSNlCgQpKvrpQB17+Kye35h1CwiRCwi445Hvkz0Sm3PMyCC62neieDvQBHISdDn5ncKzDrXCuNsu1hz61xVyzZXFCYygnuUwryfsAVAn27t+AamI/4lVxkZA8VhII3rpevy3VBymb1KuPVDHVy7PbY94ZYck2+CHNoCR3b71d2io9nsR7eOaskrqZ1Ek3hvFImFR4V/cb79vvFSO33cA4Gho89xGx7+Kn2+ovSydOjZK/cmWrjHYLSFOsOB5tKvKdAEH38b1s881wdM3peadTLnn5iOR7QzE/h9uLqdKcHcCVD7fFv/AL+udGmk6eZuyxNbT6jlJLjyo6VvtouP8PcSfGy/OE3eSiXcmpDKJL6N6U4S6V64HGx8h4rT8tyC3YvYnrzdC6IrJSlXpo7lbUQBofc1QOioKc+6jpUCFfxVJ5+RW9qpb8QDyo/TGa82ElaJEZSQrxsPIPP04pbxmlAPZacO7wsIXDlm+pUtiWfY5ks0wIT0iPO7SsRZbCmnFJH8yd8EfY7rwv3UrFLLeZVonSpQlxO31ktxHHAjuSFDlII8EVwWXGcvn5rbslzCZZUm1tOoiMWxC9KLie1RWpY349v8ud1GRLmR+rWcphZna8acV+SO5zTag/pjwCtQ1rfOgf1CgMYSfT85KXzzNYLGpNbcqvax9Vpt4y2223GYuQlifKhyggtCNHK3NLT3AlPBA1UXh/UmxZTdEQLZDuwUvu/tXona0CkbIKtkA1ZcdeXIsMF12fGuDqmEepKjEFp5YGlKTrjRO6pH4eElOBvA+f4lI3/xCqANykpznyeKwA6EdOld+60aqdJ6n4LHuSre7kDIdQ56a1JacU2lW9aLgT2/41Ysjjy5ePXGLAdLUt6K62wsHXaspISf66rKMQzPAbT03Zxy7RFImstfl51oMNSnnn96UNa0oqI2NnjY8eKGMBF1aMRMY3AAgdz9OS2CRKjx4Tk155CY7bZdW5v4QgDZVv5a5qMxHJ7LldtXcLHL/Mx23S0slCkFKgAdaUAfBFU7rRc3GMBhWCzxJDcu+KbiMRWk9rqGdArASOOEgII3od3yFQ/Tec1Zuqcu0tWS42S3XqGhcWPMjhs+swkBXb2kjRT3En51IjthKo/FFswZy5+p2/O4VuyLqZjtiv8AKsstq5uSIgQqQtiIXG2gpIUCSPbR34qbdyexoxVWUJnJetKWvV9dpJV8O9eAN7B4I1sHe6yrJrvltm6gdQLhi8a2yG4seE5NRJSpTgT6HCkAEA6HcTv2A1upWRAiWn8M78eNME5hVtU6HgjtCi6vv8e2irX7VYxt070ltxUhL+2bl0NDnr3Vsx7qLi9+use2W6RLVJkhRaDkNxCVAJKj8SgB4FW2s36cXCY7LtbT/USx3RhUNIFtYaaS8FBA42FlR7QOft4FaRS5AAaC1Yd7nst357lKUpVE9KUpQhKUpQhR2QWO03+I1FvEFqYw08l5CHN6C070ePuePB3UikBICUgADgAe1KUWooXaUPI0aUoUqvycIw+TMMx/GbS4+TsrMVHJ+Z45qeZabZaS0y2httA7UoQNBI+QA8V/VKkkndVaxrdQFlNuUrGfxCzorpcTDyWGHWTx2+sgeCf9lf1+MfOtRmRY0xgx5cdmQyoglt1AWk65HB4rnnWm2zp0OdMhMvyYSiqM6tO1NE+Sk+29D+ldtWc7NRS4YjHmHIkn5/e0qPl2Oyy5C5Eu0W+Q8vXc47GQpStDQ2SNngCpClUuk0gHdecZhiMwhiMy2yygaQ22kJSkfQDgV+RIsaI16USOzHb2VdjSAkbPk6HvXrShTSVzKt1vVOE5UGKZaRoPlpPqD/a1uumlCgi14uxYzshqS7GZcfZ36TikAqb3we0+Rv6V+uxozr7Uh2O0t5nfpOKQCpGxo9p8jf0r1pQppeKIkVD7z6YzKXXwA8sIAU4ANDuPvocc1/CbfATAMBMGMmGQQWA0kN6J2fh1rzzXTShRQUfEsdlhyEyIlot8d5G+1xqMhKhsaOiBupClKCbQABslKUoUpSlKEL//2Q==" alt="Shvaan Pet Care"></a>
+    <nav class="nav-links"><a href="index.html">Home</a><a href="services.html">Services</a><a href="about.html" class="active">About</a><a href="contact.html">Contact</a></nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost btn-sm" href="app.html">Client Login</a>
+      <a class="btn btn-primary btn-sm" href="book.html">Meet &amp; Greet</a>
+      <button class="menu-toggle" onclick="document.getElementById('mm').classList.toggle('open')" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
     </div>
-    <div style="display:flex;gap:0;background:var(--cream-mid);border:1.5px solid var(--cream-dark);border-radius:var(--r3);padding:4px;margin-bottom:18px;width:fit-content;flex-wrap:wrap">
-      <button class="svc-btn" id="custtab-dogs" onclick="custGo('dogs')" style="flex:none;padding:8px 16px">🐶 My Dogs</button>
-      <button class="svc-btn" id="custtab-book" onclick="custGo('book')" style="flex:none;padding:8px 16px">📅 Request Booking</button>
-      <button class="svc-btn" id="custtab-history" onclick="custGo('history')" style="flex:none;padding:8px 16px">🧾 My History</button>
-    </div>
-    <div id="cust-tab-body"></div>`;
-}
+  </div>
+  <div class="mobile-menu" id="mm">
+    <a href="index.html">Home</a><a href="services.html">Services</a><a href="about.html">About</a><a href="contact.html">Contact</a>
+    <a class="btn btn-ghost" href="app.html">Client Login</a>
+    <a class="btn btn-primary" href="book.html">Meet &amp; Greet</a>
+  </div>
+</header>
 
-function custGo(tab){
-  custTab=tab;
-  ['dogs','book','history'].forEach(t=>{ const b=document.getElementById('custtab-'+t); if(b) b.classList.toggle('active',t===tab); });
-  if(tab==='dogs') renderCustDogs();
-  if(tab==='book') renderCustBook();
-  if(tab==='history') renderCustHistory();
-}
+<section class="page-hero"><div class="wrap"><h1>About Shvaan Pet Care</h1><p>Small by design. Personal by nature. We believe every dog deserves to feel truly at home.</p></div></section>
 
-/* ── My Dogs ── */
-function renderCustDogs(){
-  const c=document.getElementById('cust-tab-body');
-  if(!custDogs.length){ c.innerHTML='<div class="card"><div class="es"><span class="ei">🐕</span><p>No dogs on file yet. Contact us to add your dog\u2019s profile.</p></div></div>'; return; }
-  c.innerHTML='<div style="display:flex;flex-direction:column;gap:12px">'+custDogs.map(d=>{
-    const rv=vaccStatus(d.vacc_rabies), dv=vaccStatus(d.vacc_dhpp), bv=vaccStatus(d.vacc_bordetella);
-    return `<div class="card" style="margin:0">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
-        <div class="da" style="width:54px;height:54px;font-size:24px">${d.photo?`<img src="${d.photo}" alt="">`:'🐶'}</div>
-        <div><div style="font-size:17px;font-weight:600;color:var(--ink)">${esc(d.dog_name)}</div><div style="font-size:13px;color:var(--ink-light)">${d.breed?esc(d.breed):'Dog'}</div></div>
+<section>
+  <div class="wrap">
+    <div class="split">
+      <div class="split-photo"><img src="https://images.unsplash.com/photo-1450778869180-41d0601e046e?w=800&q=80&fit=crop" alt="Personal dog care at Shvaan Pet Care" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r3)"></div>
+      <div class="split-text">
+        <h2>Why we started Shvaan</h2>
+        <p>Shvaan Pet Care was born from a simple belief: dogs are family, and they deserve to be treated like it when their people are away. After years of caring for dogs of all breeds and temperaments, we built the kind of boarding experience we'd want for our own pets.</p>
+        <p>We keep our guest numbers intentionally small — not because we have to, but because we choose to. Smaller means calmer, safer, and more personal. Every dog gets one-on-one time, a consistent routine, and a warm space to truly relax.</p>
       </div>
-      <div class="vacc-row">
-        <span class="vbdg ${rv.cls}">💉 Rabies: ${rv.label}</span>
-        <span class="vbdg ${dv.cls}">💉 DHPP: ${dv.label}</span>
-        <span class="vbdg ${bv.cls}">💉 Bordetella: ${bv.label}</span>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <div class="split">
+      <div class="split-text">
+        <h2>Our space</h2>
+        <p>Our boarding space is clean, comfortable, and designed with dogs in mind — indoor rest areas, a secure outdoor play area, and enough room for every guest to have their own comfortable spot. We follow a structured daily routine with feeding, play, rest, and walks.</p>
+        <p>We enforce strict vaccination requirements for all guests (Rabies, DHPP, and Bordetella) and keep careful records of each dog's health, diet, and medications. Safety isn't an afterthought here — it's the foundation.</p>
       </div>
-      ${d.notes?`<div style="font-size:12px;color:var(--ink-light);margin-top:8px">📋 ${esc(d.notes)}</div>`:''}
-    </div>`;
-  }).join('')+'</div>';
-}
+      <div class="split-photo"><img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80&fit=crop" alt="Safe and comfortable dog boarding space" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r3)"></div>
+    </div>
+  </div>
+</section>
 
-/* ── Request Booking ── */
-let custBookDogs=new Set();
-function renderCustBook(){
-  const c=document.getElementById('cust-tab-body');
-  if(!custDogs.length){ c.innerHTML='<div class="card"><div class="es"><span class="ei">🐕</span><p>We need your dog\u2019s profile on file before booking. Please contact us.</p></div></div>'; return; }
-  custBookDogs=new Set();
-  const today=new Date().toISOString().split('T')[0];
-  c.innerHTML=`<div class="card" style="margin:0">
-    <div class="ct">📅 Request a Stay</div>
-    <div style="font-size:12px;color:var(--ink-faint);margin-bottom:14px">Choose your dog(s), service, and dates. We\u2019ll confirm availability and contact you.</div>
-    <div class="fd" style="margin-bottom:12px"><label>Service</label>
-      <select id="cb-svc"><option value="boarding">🏡 Boarding</option><option value="daycare">☀️ Day Care</option></select>
+<section>
+  <div class="wrap">
+    <div class="section-head"><span class="tag">Our Promise</span><h2>What you can always count on</h2></div>
+    <div class="req-grid">
+      <div class="req"><h3>🛡️ Safety first</h3><p>Every guest is screened at a meet &amp; greet before their first stay. Our space is fully secured, and dogs are supervised at all times — no unsupervised mixing of dogs who haven't been introduced.</p></div>
+      <div class="req"><h3>❤️ Genuine attention</h3><p>We limit the number of guests at any time so every dog gets real, individual care — not just a bed in a crowded room. Your dog will know they're loved.</p></div>
+      <div class="req"><h3>📸 Stay in the loop</h3><p>We send photo updates throughout every stay so you can see your pup thriving. No news isn't always good news — we believe in keeping you connected.</p></div>
+      <div class="req"><h3>🎓 Experience you can trust</h3><p>Years of hands-on experience with dogs of all sizes, breeds, and personalities — including seniors, anxious dogs, and those needing medication management.</p></div>
     </div>
-    <div class="fd" style="margin-bottom:12px"><label>Your Dog(s)</label>
-      <div id="cb-dogs" style="display:flex;flex-wrap:wrap;gap:8px">${custDogs.map(d=>`<button type="button" class="btn btn-o sm" id="cb-dog-${d.id}" onclick="custToggleDog('${d.id}')">${d.photo?'🐶':'🐶'} ${esc(d.dog_name)}</button>`).join('')}</div>
-    </div>
-    <div class="g2" style="margin-bottom:12px">
-      <div class="fd"><label>Check-In Date</label><input type="date" id="cb-ci" value="${today}"></div>
-      <div class="fd"><label>Check-In Time</label><input type="time" id="cb-ci-t" value="10:00"></div>
-      <div class="fd"><label>Check-Out Date</label><input type="date" id="cb-co" value="${today}"></div>
-      <div class="fd"><label>Check-Out Time</label><input type="time" id="cb-co-t" value="10:00"></div>
-    </div>
-    <div class="fd" style="margin-bottom:14px"><label>Notes / Special Instructions</label><textarea id="cb-notes" style="height:60px" placeholder="Feeding schedule, medications, anything we should know…"></textarea></div>
-    <div id="cb-result" style="font-size:13px;margin-bottom:10px;display:none"></div>
-    <button class="btn btn-p" id="cb-submit" onclick="custSubmitBooking()" style="width:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>Submit Request</button>
-  </div>`;
-}
-function custToggleDog(id){
-  if(custBookDogs.has(id)) custBookDogs.delete(id); else custBookDogs.add(id);
-  const b=document.getElementById('cb-dog-'+id);
-  if(b){ const on=custBookDogs.has(id); b.classList.toggle('btn-p',on); b.classList.toggle('btn-o',!on); }
-}
-async function custSubmitBooking(){
-  const res=document.getElementById('cb-result');
-  if(!custBookDogs.size){ res.style.display='block'; res.style.color='var(--danger)'; res.textContent='Please select at least one dog.'; return; }
-  const ci=document.getElementById('cb-ci').value, cit=document.getElementById('cb-ci-t').value;
-  const co=document.getElementById('cb-co').value, cot=document.getElementById('cb-co-t').value;
-  if(!ci||!co){ res.style.display='block'; res.style.color='var(--danger)'; res.textContent='Please choose check-in and check-out dates.'; return; }
-  const inDt=new Date(ci+'T'+cit), outDt=new Date(co+'T'+cot);
-  if(outDt<=inDt){ res.style.display='block'; res.style.color='var(--danger)'; res.textContent='Check-out must be after check-in.'; return; }
-  const sel=custDogs.filter(d=>custBookDogs.has(d.id));
-  const owner=(myProfile&&myProfile.owner_name)||'';
-  const btn=document.getElementById('cb-submit'); btn.disabled=true; btn.style.opacity='.7';
-  const rec={ id:Date.now().toString()+Math.random().toString(36).slice(2), dog_id:sel[0].id, dog_ids:sel.map(d=>d.id), dog_name:sel.map(d=>d.dog_name).join(', '), owner_name:owner, service:document.getElementById('cb-svc').value, checkin:ci+'T'+cit, checkout:co+'T'+cot, notes:document.getElementById('cb-notes').value.trim(), status:'pending', created_at:new Date().toISOString(), source:'customer' };
-  try{
-    await sbFetch('requests','POST',rec);
-    custReqs.unshift(rec);
-    res.style.display='block'; res.style.color='var(--forest)'; res.innerHTML='✅ Request submitted! We\u2019ll confirm and reach out soon.';
-    btn.disabled=false; btn.style.opacity='1';
-    setTimeout(()=>custGo('history'),1200);
-  }catch(e){ res.style.display='block'; res.style.color='var(--danger)'; res.textContent='⚠️ '+e.message; btn.disabled=false; btn.style.opacity='1'; }
-}
+  </div>
+</section>
 
-/* ── My History (reservations + completed bookings/invoices) ── */
-function renderCustHistory(){
-  const c=document.getElementById('cust-tab-body');
-  const fd=s=>new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-  const ft=s=>new Date(s).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-  let html='';
-  // Active/upcoming reservations
-  const active=custReqs.filter(r=>r.status!=='completed'&&r.status!=='declined');
-  html+='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:8px">Upcoming & Pending</div>';
-  if(active.length){
-    html+='<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">'+active.map(r=>{
-      const stLabel={pending:'Pending confirmation',confirmed:'Confirmed',checked_in:'Checked in'}[r.status]||r.status;
-      const stColor={pending:'var(--gold)',confirmed:'var(--forest)',checked_in:'var(--blue)'}[r.status]||'var(--ink-light)';
-      return `<div class="card" style="margin:0">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div><div style="font-size:15px;font-weight:600;color:var(--ink)">${esc(r.dog_name)}</div><div style="font-size:12px;color:var(--ink-faint);margin-top:2px">${r.service==='boarding'?'🏡 Boarding':'☀️ Day Care'}</div></div>
-          <span style="font-size:11px;font-weight:600;color:${stColor}">${stLabel}</span>
+<section class="alt">
+  <div class="wrap">
+    <div class="cta-band">
+      <h2>Come meet us</h2>
+      <p>Every new client starts with a free meet &amp; greet. It's the best way to see our space, introduce your dog, and make sure it's a great fit — for everyone.</p>
+      <a class="btn btn-primary" href="book.html">Schedule a Meet &amp; Greet</a>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="f-grid">
+      <div>
+        <img class="f-logo" src="data:image/png;base64,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" alt="Shvaan Pet Care">
+        <p>Loving, attentive dog boarding &amp; day care in Austin, TX.</p>
+      </div>
+      <div>
+        <h4>Explore</h4>
+        <div class="f-links">
+          <a href="index.html">Home</a><a href="services.html">Services</a>
+          <a href="about.html">About</a><a href="contact.html">Contact</a>
+          <a href="book.html">Meet &amp; Greet</a><a href="app.html">Client Login</a>
         </div>
-        <div style="font-size:12px;color:var(--ink-light);margin-top:8px">${fd(r.checkin)} ${ft(r.checkin)} → ${fd(r.checkout)} ${ft(r.checkout)}</div>
-      </div>`;
-    }).join('')+'</div>';
-  } else { html+='<div style="font-size:13px;color:var(--ink-faint);margin-bottom:20px">No upcoming reservations. Use “Request Booking” to make one.</div>'; }
-  // Completed bookings with invoices
-  html+='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:8px">Past Stays & Invoices</div>';
-  const past=[...custBookings].sort((a,b)=>new Date(b.checkout||b.saved_at)-new Date(a.checkout||a.saved_at));
-  if(past.length){
-    html+='<div style="display:flex;flex-direction:column;gap:10px">'+past.map(b=>`
-      <div class="card" style="margin:0">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div><div style="font-size:15px;font-weight:600;color:var(--ink)">${esc((b.entries||[]).map(e=>e.dogName||'').join(', '))}</div><div style="font-size:12px;color:var(--ink-faint);margin-top:2px">${fd(b.checkin)} → ${fd(b.checkout)}</div></div>
-          <div style="text-align:right"><div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink)">$${parseFloat(b.grand_total).toFixed(2)}</div>${b.paid?'<div style="font-size:10px;color:var(--forest);font-weight:600">✓ Paid</div>':'<div style="font-size:10px;color:var(--danger);font-weight:600">● Unpaid</div>'}</div>
+      </div>
+      <div>
+        <h4>Get in touch</h4>
+        <div class="f-links">
+          <a href="tel:+15125550000">📞 (512) 555-0000</a>
+          <a href="mailto:hello@shvaanpetcare.com">✉️ hello@shvaanpetcare.com</a>
+          <a href="#">📍 Serving Austin, TX &amp; surrounding areas</a>
+          <a href="#">🕑 Mon–Sun, 7 am – 7 pm</a>
         </div>
-        <button class="btn btn-g sm" style="margin-top:10px" onclick="openInv('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>View Invoice</button>
-      </div>`).join('')+'</div>';
-  } else { html+='<div style="font-size:13px;color:var(--ink-faint)">No past stays yet.</div>'; }
-  c.innerHTML=html;
-}
+        <div class="socials" style="margin-top:14px">
+          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+          <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+        </div>
+      </div>
+    </div>
+    <div class="f-bottom">
+      <span>© <span id="yr"></span> Shvaan Pet Care. All rights reserved.</span>
+      <span>Made with 🐾 for happy dogs</span>
+    </div>
+  </div>
+</footer>
+<script>document.getElementById('yr').textContent=new Date().getFullYear();</script>
+</body>
+</html>
