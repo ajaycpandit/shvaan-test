@@ -633,10 +633,11 @@
 <script src="js/themes.js"></script>
 <script src="js/auth.js"></script>
 <!-- Dog drawer backdrop -->
-<div class="dog-drawer-backdrop" id="dog-drawer-backdrop" onclick="closeDogDrawer()"></div>
+<div class="dog-drawer-backdrop" id="dog-drawer-backdrop"></div>
 
-<!-- Dog slide-over drawer -->
-<div class="dog-drawer" id="dog-drawer">
+<!-- Dog quick-view modal -->
+<div class="dog-drawer" id="dog-drawer" onclick="if(event.target===this)closeDogDrawer()">
+  <div class="dd-inner">
   <div class="dd-head">
     <div class="dd-av" id="dd-av">🐶</div>
     <div style="flex:1;min-width:0">
@@ -655,6 +656,7 @@
   <div class="dd-expand" onclick="openDogFull()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
     Open full profile
+  </div>
   </div>
 </div>
 

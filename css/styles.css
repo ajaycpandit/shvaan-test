@@ -473,10 +473,12 @@ input:focus, select:focus, textarea:focus{ outline:none; }
 .rc-pill{background:var(--forest-pale);color:var(--forest);font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px}
 
 /* ── Dog drawer (slide-over from right) ── */
-.dog-drawer{position:fixed;top:56px;right:0;bottom:0;width:360px;background:var(--white);border-left:1px solid var(--cream-dark);z-index:600;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 24px rgba(42,33,26,.12)}
-.dog-drawer.on{transform:translateX(0)}
-.dog-drawer-backdrop{position:fixed;inset:0;top:56px;z-index:599;background:rgba(42,33,26,.25);display:none;backdrop-filter:blur(1px)}
-.dog-drawer-backdrop.on{display:block}
+/* ── Dog quick-view modal (centred popup) ── */
+.dog-drawer{position:fixed;inset:0;background:rgba(28,20,16,.55);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .18s ease}
+.dog-drawer.on{opacity:1;pointer-events:all}
+.dog-drawer-backdrop{display:none} /* backdrop is now baked into .dog-drawer itself */
+.dog-drawer-backdrop.on{display:none}
+.dd-inner{background:var(--white);width:100%;max-width:520px;max-height:88dvh;border-radius:var(--r4);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(42,33,26,.22);animation:moPop .2s ease;transform:none}
 .dd-head{padding:13px 16px;border-bottom:1px solid var(--cream-dark);display:flex;align-items:center;gap:10px;flex-shrink:0}
 .dd-av{width:40px;height:40px;border-radius:50%;overflow:hidden;background:var(--cream-mid);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:2px solid var(--cream-dark)}
 .dd-av img{width:100%;height:100%;object-fit:cover}
@@ -524,8 +526,8 @@ input:focus, select:focus, textarea:focus{ outline:none; }
 .df-tab.on{color:var(--ink);border-bottom-color:var(--brown)}
 .df-content{flex:1;overflow-y:auto;padding:18px 20px}
 @media(max-width:700px){
-  .dog-drawer{top:0;width:100%}
-  .dog-drawer-backdrop{top:0}
+  .dog-drawer{padding:10px}
+  .dd-inner{max-height:94dvh;border-radius:var(--r3)}
   .df-sb{display:none}
   .dog-full-inner{max-height:100dvh;border-radius:0}
 }

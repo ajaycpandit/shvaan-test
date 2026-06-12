@@ -605,7 +605,6 @@ function openDogDrawer(id) {
   renderDogTabContent(d, ddActiveTab, document.getElementById('dd-body'));
   // show
   document.getElementById('dog-drawer').classList.add('on');
-  document.getElementById('dog-drawer-backdrop').classList.add('on');
 }
 
 function switchDrawerTab(tab) {
@@ -620,7 +619,6 @@ function switchDrawerTab(tab) {
 
 function closeDogDrawer() {
   document.getElementById('dog-drawer').classList.remove('on');
-  document.getElementById('dog-drawer-backdrop').classList.remove('on');
 }
 
 function openDogProfileFromDrawer() {
