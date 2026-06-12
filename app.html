@@ -427,6 +427,11 @@
           <div id="team-list"></div>
           <div style="border-top:1px solid var(--cream-dark);margin-top:14px;padding-top:14px">
             <div style="font-size:12px;font-weight:600;color:var(--ink-mid);margin-bottom:8px">Add / update a person by email</div>
+            <div style="margin-bottom:14px">
+              <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:8px">Quick role templates</div>
+              <div id="role-templates" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px"></div>
+              <div style="font-size:11px;color:var(--ink-faint);margin-top:6px">Click a template to pre-fill permissions below, then customise as needed.</div>
+            </div>
             <div class="g2" style="margin-bottom:10px">
               <div class="fd"><label>User Email (must match their Supabase login)</label><input type="email" id="tm-email" placeholder="person@email.com"></div>
               <div class="fd"><label>Role</label><select id="tm-role" onchange="tmRoleChange()"><option value="staff">Staff</option><option value="admin">Admin</option><option value="customer">Customer</option></select></div>
@@ -464,6 +469,58 @@
       </div>
     </aside>
   </div><!-- end app-body -->
+<!-- Dog drawer backdrop -->
+<div class="dog-drawer-backdrop" id="dog-drawer-backdrop" onclick="closeDogDrawer()"></div>
+
+<!-- Dog slide-over drawer -->
+<div class="dog-drawer" id="dog-drawer">
+  <div class="dd-head">
+    <div class="dd-av" id="dd-av">🐶</div>
+    <div style="flex:1;min-width:0">
+      <div class="dd-name" id="dd-name">—</div>
+      <div class="dd-meta" id="dd-meta">—</div>
+    </div>
+    <div class="dd-actions">
+      <button class="btn btn-o sm" id="dd-edit-btn" onclick="openDogProfileFromDrawer()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit
+      </button>
+    </div>
+    <button class="dd-close" onclick="closeDogDrawer()">×</button>
+  </div>
+  <div class="dd-tabs" id="dd-tabs"></div>
+  <div class="dd-body" id="dd-body"></div>
+  <div class="dd-expand" onclick="openDogFull()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+    Open full profile
+  </div>
+</div>
+
+<!-- Dog full-profile modal -->
+<div class="dog-full-mo" id="dog-full-mo">
+  <div class="dog-full-inner">
+    <div class="df-head">
+      <div class="df-av" id="df-av">🐶</div>
+      <div style="flex:1;min-width:0">
+        <div class="df-name" id="df-name">—</div>
+        <div class="df-meta" id="df-meta">—</div>
+        <div class="df-badges" id="df-badges"></div>
+      </div>
+      <div class="df-actions">
+        <button class="btn btn-o sm" id="df-edit-btn" onclick="openDogProfileFromFull()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit profile
+        </button>
+        <button class="btn btn-o sm" onclick="closeDogFull()">Close</button>
+      </div>
+    </div>
+    <div class="df-body">
+      <div class="df-sb" id="df-sb"></div>
+      <div class="df-main">
+        <div class="df-tabs" id="df-tabs"></div>
+        <div class="df-content" id="df-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
 </div><!-- end app-shell -->
 
 <!-- Mobile bottom nav -->

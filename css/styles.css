@@ -426,3 +426,107 @@ input:focus, select:focus, textarea:focus{ outline:none; }
 .photo-cell img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
 .photo-del{position:absolute;top:5px;right:5px;width:26px;height:26px;border:none;border-radius:50%;background:rgba(217,83,79,.92);color:#fff;font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .photo-del:hover{background:var(--danger)}
+
+/* ── Look & feel improvements ── */
+
+/* Card hover lift on all cards, not just hi/di */
+@media(min-width:701px){
+  .card:hover{box-shadow:0 4px 20px rgba(42,33,26,.10);transform:translateY(-1px)}
+  .card{transition:box-shadow .2s ease,transform .2s ease}
+}
+
+/* Page transition — smoother fade+slide between sections */
+@keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pg.active{animation:pgIn .2s ease}
+
+/* Section headers inside cards — cleaner divider treatment */
+.ss{padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--cream-dark)}
+.ss:last-child{padding-bottom:0;margin-bottom:0;border-bottom:none}
+.ss h3{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+
+/* Right panel items — warmer hover */
+.rp-item:hover{background:var(--cream-dark);color:var(--ink)}
+
+/* Stat tiles in right panel — themed number colour */
+.rp-stat-num{color:var(--brown-dark)}
+
+/* Better badge/tag styling for role chips in team list */
+.role-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:capitalize}
+.role-admin{background:var(--coral-pale);color:var(--coral)}
+.role-staff{background:var(--forest-pale);color:var(--forest)}
+.role-customer{background:#E6F1FB;color:#185FA5}
+
+/* Nicer empty states */
+.es{background:var(--cream-mid);border-radius:var(--r3);padding:40px 20px;border:1px dashed var(--cream-dark)}
+.es .ei{font-size:36px;margin-bottom:8px;display:block;opacity:.7}
+.es p{font-size:13px;color:var(--ink-faint);line-height:1.6}
+
+/* Input focus glow uses theme colour */
+.fd input:focus,.fd select:focus,.fd textarea:focus{
+  border-color:var(--brown)!important;
+  box-shadow:0 0 0 3px rgba(var(--brown-rgb,200,94,24),.12)!important;
+}
+
+/* Smoother modal backdrop */
+.mo{backdrop-filter:blur(2px)}
+
+/* Rate change note pill */
+.rc-pill{background:var(--forest-pale);color:var(--forest);font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px}
+
+/* ── Dog drawer (slide-over from right) ── */
+.dog-drawer{position:fixed;top:56px;right:0;bottom:0;width:360px;background:var(--white);border-left:1px solid var(--cream-dark);z-index:600;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);box-shadow:-4px 0 24px rgba(42,33,26,.12)}
+.dog-drawer.on{transform:translateX(0)}
+.dog-drawer-backdrop{position:fixed;inset:0;top:56px;z-index:599;background:rgba(42,33,26,.25);display:none;backdrop-filter:blur(1px)}
+.dog-drawer-backdrop.on{display:block}
+.dd-head{padding:13px 16px;border-bottom:1px solid var(--cream-dark);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.dd-av{width:40px;height:40px;border-radius:50%;overflow:hidden;background:var(--cream-mid);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:2px solid var(--cream-dark)}
+.dd-av img{width:100%;height:100%;object-fit:cover}
+.dd-name{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:1px}
+.dd-meta{font-size:11px;color:var(--ink-faint)}
+.dd-actions{margin-left:auto;display:flex;gap:6px;flex-shrink:0}
+.dd-close{width:28px;height:28px;border-radius:50%;background:var(--cream-mid);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--ink-mid);font-size:16px;flex-shrink:0}
+.dd-tabs{display:flex;border-bottom:1px solid var(--cream-dark);padding:0 14px;flex-shrink:0;background:var(--white)}
+.dd-tab{padding:9px 11px;font-size:12px;font-weight:500;color:var(--ink-faint);border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;transition:color .12s}
+.dd-tab.on{color:var(--ink);border-bottom-color:var(--brown)}
+.dd-body{flex:1;overflow-y:auto;padding:14px}
+.dd-expand{padding:11px 16px;border-top:1px solid var(--cream-dark);display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;font-weight:600;color:var(--brown);cursor:pointer;background:var(--cream-mid);flex-shrink:0;transition:background .12s}
+.dd-expand:hover{background:var(--cream-dark)}
+.dd-stat-row{display:flex;gap:7px;margin-bottom:12px}
+.dd-stat{flex:1;background:var(--cream-mid);border-radius:var(--r2);padding:8px;text-align:center}
+.dd-stat-n{font-size:18px;font-weight:700;color:var(--brown-dark)}
+.dd-stat-l{font-size:9px;color:var(--ink-faint);margin-top:1px}
+.dd-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin:12px 0 7px}
+.dd-note{background:var(--cream-mid);border-radius:var(--r2);padding:8px 10px;margin-bottom:6px;font-size:12px;color:var(--ink)}
+.dd-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border:1px solid var(--cream-dark);border-radius:var(--r2);margin-bottom:5px;font-size:12px}
+
+/* ── Dog full-profile modal ── */
+.dog-full-mo{position:fixed;inset:0;background:rgba(28,20,16,.6);z-index:800;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(2px)}
+.dog-full-mo.on{display:flex}
+.dog-full-inner{background:var(--white);width:100%;max-width:900px;height:90dvh;border-radius:var(--r4);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(42,33,26,.25);animation:moPop .22s ease}
+.df-head{padding:14px 20px;border-bottom:1px solid var(--cream-dark);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.df-av{width:50px;height:50px;border-radius:50%;overflow:hidden;background:var(--cream-mid);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;border:2px solid var(--cream-dark)}
+.df-av img{width:100%;height:100%;object-fit:cover}
+.df-name{font-family:'DM Serif Display',serif;font-size:20px;color:var(--ink);line-height:1.2}
+.df-meta{font-size:12px;color:var(--ink-faint);margin-top:2px}
+.df-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.df-badge{font-size:10px;padding:2px 9px;border-radius:99px}
+.df-actions{margin-left:auto;display:flex;gap:8px;flex-shrink:0}
+.df-body{display:flex;flex:1;overflow:hidden}
+.df-sb{width:200px;flex-shrink:0;border-right:1px solid var(--cream-dark);padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.df-sb-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin-bottom:6px}
+.df-field{display:flex;flex-direction:column;gap:1px;padding:5px 0;border-bottom:1px solid var(--cream-mid)}
+.df-field:last-child{border:none}
+.df-fl{font-size:10px;color:var(--ink-faint)}
+.df-fv{font-size:12px;font-weight:600;color:var(--ink)}
+.df-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.df-tabs{display:flex;border-bottom:1px solid var(--cream-dark);padding:0 16px;flex-shrink:0;overflow-x:auto;scrollbar-width:none}
+.df-tabs::-webkit-scrollbar{display:none}
+.df-tab{padding:10px 12px;font-size:13px;font-weight:500;color:var(--ink-faint);border-bottom:2px solid transparent;white-space:nowrap;cursor:pointer;transition:color .12s}
+.df-tab.on{color:var(--ink);border-bottom-color:var(--brown)}
+.df-content{flex:1;overflow-y:auto;padding:18px 20px}
+@media(max-width:700px){
+  .dog-drawer{top:0;width:100%}
+  .dog-drawer-backdrop{top:0}
+  .df-sb{display:none}
+  .dog-full-inner{max-height:100dvh;border-radius:0}
+}
