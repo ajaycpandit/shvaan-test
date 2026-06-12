@@ -678,13 +678,18 @@ function closeDogFull() {
   document.getElementById('dog-full-mo').classList.remove('on');
 }
 
-// close full modal on backdrop click
-document.getElementById('dog-full-mo').addEventListener('click', function(e) {
-  if(e.target===this) closeDogFull();
+// close full modal on backdrop click — deferred until DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  const fullMo = document.getElementById('dog-full-mo');
+  if(fullMo) fullMo.addEventListener('click', function(e) {
+    if(e.target===this) closeDogFull();
+  });
 });
 
-// override old openDogHistory to use new drawer
-window.openDogHistory = openDogDrawer;
+// override old openDogHistory to use new drawer — also deferred
+document.addEventListener('DOMContentLoaded', function() {
+  window.openDogHistory = openDogDrawer;
+});
 
 // re-render drawer/full when notes change so they stay fresh
 const _origRenderDogHistBody = typeof renderDogHistBody === 'function' ? renderDogHistBody : null;
