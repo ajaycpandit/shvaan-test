@@ -263,7 +263,7 @@ async function saveEditDog(){
       const oldFmt=oldRate!=null?'$'+parseFloat(oldRate).toFixed(2)+'/night':'default rate';
       const newFmt=newRate!=null?'$'+parseFloat(newRate).toFixed(2)+'/night':'default rate';
       const noteText=`Rate changed: ${oldFmt} → ${newFmt}`;
-      await dbAddNote({
+      const rateNote={
         id: Date.now().toString()+Math.random().toString(36).slice(2,6),
         dog_id: editingDogId,
         dog_name: name,
@@ -273,12 +273,20 @@ async function saveEditDog(){
         new_rate: newRate,
         created_by: currentUser?currentUser.email:'unknown',
         created_at: new Date().toISOString()
-      }).catch(()=>{}); // non-blocking — don't fail the save if note fails
+      };
+      try{
+        await dbAddNote(rateNote);
+        visitNotes.unshift(rateNote); // add to local array so it shows immediately
+      }catch(e){
+        console.warn('Rate note save failed:', e.message);
+        // still show the note locally even if DB save failed
+        visitNotes.unshift(rateNote);
+      }
     }
     const d=dogs.find(x=>x.id===editingDogId); if(d) Object.assign(d, upd);
     setSyncState('ok');
-    closeEditMo(); renderDogList(); renderDD(); renderReqDD(); updateBadges();
-    toast(rateChanged?'Profile updated with rate change logged!':'Profile updated!');
+    closeEditMo(); renderDogList(); renderDD(); renderReqDD(); updateBadges(); refreshDogPanels();
+    toast(rateChanged?'Profile updated — rate change logged!':'Profile updated!');
   }catch(e){ setSyncState('err'); toast('Error: '+e.message, true); }
 }
 let dogHistId=null;
