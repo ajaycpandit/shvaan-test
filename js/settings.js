@@ -10,10 +10,60 @@ function renderSettings() {
   document.getElementById('s-cap').value=s.capacity||12;
   const lp=document.getElementById('logo-preview'); if(lp) lp.src=pendingLogo||currentLogo();
   updateScPrev();
-  if(typeof renderThemePicker === 'function') renderThemePicker();
+  if(typeof renderRoleTemplates === 'function') renderRoleTemplates();
+  if(typeof updateThemeSettingsRow === 'function') updateThemeSettingsRow();
   // Team management — admin only
   const tc=document.getElementById('team-card');
   if(tc){ if(isAdmin()){ tc.style.display=''; renderTeamList(); tmRenderPerms(); tmRoleChange(); } else { tc.style.display='none'; } }
+}
+
+/* ── Role templates ───────────────────────────────────────── */
+const ROLE_TEMPLATES = {
+  senior_staff: {
+    label: 'Senior Staff',
+    desc: 'Full operational access except finance and settings',
+    permissions: { dashboard:true, calc:true, calendar:true, requests:true, dogs:true, history:true, finance:false, settings:false }
+  },
+  junior_staff: {
+    label: 'Junior Staff',
+    desc: 'Day-to-day operations only — no history, finance or settings',
+    permissions: { dashboard:true, calc:true, calendar:true, requests:true, dogs:true, history:false, finance:false, settings:false }
+  },
+  weekend_cover: {
+    label: 'Weekend Cover',
+    desc: 'Calendar and check-ins only',
+    permissions: { dashboard:true, calc:false, calendar:true, requests:true, dogs:true, history:false, finance:false, settings:false }
+  },
+  finance_only: {
+    label: 'Finance / Reporting',
+    desc: 'Read-only finance and history access',
+    permissions: { dashboard:true, calc:false, calendar:false, requests:false, dogs:false, history:true, finance:true, settings:false }
+  }
+};
+
+function applyRoleTemplate(key) {
+  const t = ROLE_TEMPLATES[key];
+  if (!t) return;
+  tmRenderPerms(t.permissions);
+  document.getElementById('tm-role').value = 'staff';
+  tmRoleChange();
+  // highlight the active template
+  document.querySelectorAll('.rt-btn').forEach(b => {
+    b.style.borderColor = b.dataset.key === key ? 'var(--brown)' : 'var(--cream-dark)';
+    b.style.background = b.dataset.key === key ? 'var(--forest-pale)' : 'var(--white)';
+  });
+  toast('Template applied — customise if needed, then save.');
+}
+
+function renderRoleTemplates() {
+  const el = document.getElementById('role-templates');
+  if (!el) return;
+  el.innerHTML = Object.entries(ROLE_TEMPLATES).map(([key, t]) => `
+    <button class="rt-btn" data-key="${key}" onclick="applyRoleTemplate('${key}')"
+      style="text-align:left;border:1.5px solid var(--cream-dark);border-radius:var(--r2);padding:10px 12px;background:var(--white);cursor:pointer;font-family:'DM Sans',sans-serif;transition:border-color .15s,background .15s">
+      <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:2px">${esc(t.label)}</div>
+      <div style="font-size:11px;color:var(--ink-faint)">${esc(t.desc)}</div>
+    </button>`).join('');
 }
 
 /* ── Team & access management (admin) ── */

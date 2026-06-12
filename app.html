@@ -332,9 +332,15 @@
       <div id="pg-settings" class="pg">
         <div class="ph"><h1>Settings</h1><p>Shared across all users.</p></div>
         <div class="card">
-          <div class="ss"><h3>🎨 App Theme</h3>
-            <p style="font-size:12px;color:var(--ink-faint);margin-bottom:14px;line-height:1.5">Choose a colour theme for the app. Changes apply instantly so you can preview before saving.</p>
-            <div id="theme-picker" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px"></div>
+          <div class="ss" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div>
+              <h3 style="margin-bottom:2px">🎨 App Theme</h3>
+              <div style="font-size:12px;color:var(--ink-faint)">Current: <span id="theme-current-label" style="font-weight:600;color:var(--ink-mid)">Warm terracotta</span></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div id="theme-current-swatches" style="display:flex;gap:3px;align-items:center"></div>
+              <button class="btn btn-o sm" onclick="openThemeMo()">Change theme</button>
+            </div>
           </div>
           <div class="ss"><h3>💰 Default Rates</h3>
             <div class="g2">
@@ -678,6 +684,13 @@
     </div>
   </div>
 </div>
+<!-- Theme Picker modal -->
+<div class="mo" id="theme-mo"><div class="mo-inner" style="max-width:720px"><div class="mo-head"><h3>Choose App Theme</h3><button class="btn btn-o sm" onclick="closeThemeMo()">Close</button></div>
+<div class="mo-body">
+  <p style="font-size:13px;color:var(--ink-faint);margin-bottom:18px;line-height:1.5">Changes apply instantly — try them all before saving. Your choice is saved and shared across all devices.</p>
+  <div id="theme-picker" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div>
+</div></div></div>
+
 <!-- Add Dog modal -->
 <div class="mo" id="add-dog-mo"><div class="mo-inner" style="max-width:680px"><div class="mo-head"><h3>Add New Dog</h3><button class="btn btn-o sm" onclick="closeAddDogMo()">Close</button></div>
 <div class="mo-body">

@@ -154,9 +154,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);m
 .mtb{display:none}
 .bn{display:none}
 .main{flex:1;min-width:0;overflow-y:auto;overflow-x:hidden}
-.pg{display:none;padding:36px 44px;max-width:860px;animation:fi .18s ease}
+.pg{display:none;padding:36px 44px;width:100%;max-width:860px}
 .pg.active{display:block}
-@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+/* fi animation removed — was causing layout jitter on tab switch */
 
 /* ── Mobile ── */
 @media(max-width:700px){
@@ -436,8 +436,7 @@ input:focus, select:focus, textarea:focus{ outline:none; }
 }
 
 /* Page transition — smoother fade+slide between sections */
-@keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-.pg.active{animation:pgIn .2s ease}
+/* page transitions — instant switch, no animation to avoid jitter */
 
 /* Section headers inside cards — cleaner divider treatment */
 .ss{padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--cream-dark)}
