@@ -30,7 +30,7 @@ async function addDog() {
     document.getElementById('ppw').innerHTML='<div class="upl">🐶</div><p>Add photo</p>';
     const vb=document.getElementById('vacc-box'); vb.classList.remove('has-file');
     document.getElementById('vacc-box-content').innerHTML='<div style="font-size:20px;margin-bottom:3px">📎</div><div style="font-size:12px;font-weight:600;color:var(--ink-mid)">Click to attach records</div><div style="font-size:11px;color:var(--ink-faint);margin-top:2px">PDF, JPG, PNG — max 5MB</div>';
-    renderDogList(); renderDD(); renderReqDD(); updateBadges(); toast(name+' added!');
+    renderDogList(); renderDD(); renderReqDD(); updateBadges(); closeAddDogMo(); toast(name+' added!');
   } catch(e) { setSyncState('err'); toast('Error: '+e.message, true); }
 }
 
@@ -66,27 +66,39 @@ function renderVaccStatus(){
     if(issues.some(x=>x.kind==='soon')) soon.push({dog:d,issues:issues.filter(x=>x.kind==='soon')});
   });
   if(!expired.length && !soon.length){
-    card.innerHTML=`<div class="card" style="border-color:#C5DEC7;background:var(--forest-pale)"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">✅</span><div><div style="font-size:14px;font-weight:600;color:var(--forest)">All vaccinations current</div><div style="font-size:12px;color:var(--forest)">No dogs have expired or soon-to-expire vaccinations.</div></div></div></div>`;
+    card.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--forest-pale);border:1px solid #C5DEC7;border-radius:var(--r2);margin-bottom:14px"><span style="font-size:18px">✅</span><span style="font-size:13px;font-weight:600;color:var(--forest)">All vaccinations current</span></div>`;
     return;
   }
+  const total = expired.length + soon.length;
+  card.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--danger-pale);border:1px solid #EAB0AC;border-radius:var(--r2);margin-bottom:14px;cursor:pointer" onclick="openVaccDetail()">
+    <span style="font-size:18px">${expired.length?'🔴':'🟡'}</span>
+    <div style="flex:1">
+      <span style="font-size:13px;font-weight:600;color:var(--danger)">${expired.length?expired.length+' vaccination'+(expired.length>1?'s':'')+' expired':''}${expired.length&&soon.length?' · ':''}${soon.length?soon.length+' expiring soon':''}</span>
+    </div>
+    <span style="font-size:12px;font-weight:600;color:var(--brown);white-space:nowrap">View details →</span>
+  </div>`;
+  // pre-render the detail modal body
+  const body = document.getElementById('vacc-detail-body');
+  if(!body) return;
   const row=(item,kind)=>{
     const d=item.dog;
     const tags=item.issues.map(x=>`<span class="vbdg ${kind==='exp'?'exp':'warn'}">${x.nm} ${kind==='exp'?'expired '+Math.abs(x.diff)+'d ago':'in '+x.diff+'d'}</span>`).join(' ');
     const first=item.issues[0];
     const dateMap={Rabies:d.vacc_rabies,DHPP:d.vacc_dhpp,Bordetella:d.vacc_bordetella};
     const emailHref=d.owner_email?vaccEmailLink({dog:d,name:first.nm,date:dateMap[first.nm],diff:first.diff}):null;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--cream-mid)">
-      <div class="da" style="width:34px;height:34px;font-size:15px">${d.photo?`<img src="${d.photo}" alt="">`:'🐶'}</div>
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--cream-mid)">
+      <div class="da" style="width:34px;height:34px;font-size:15px;cursor:pointer" onclick="document.getElementById('vacc-detail-mo').classList.remove('on');openDogDrawer('${d.id}')">${d.photo?`<img src="${d.photo}" alt="">`:'🐶'}</div>
       <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(d.dog_name)} <span style="font-weight:400;color:var(--ink-faint)">· ${esc(d.owner_name)}</span></div><div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">${tags}</div></div>
       ${emailHref?`<a href="${emailHref}" onclick="event.stopPropagation()" class="btn btn-o sm" style="text-decoration:none;flex-shrink:0">✉️ Email</a>`:''}
     </div>`;
   };
-  let html='<div class="card" style="border-color:#EAB0AC">';
-  html+='<div class="ct" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Vaccination Alerts</div>';
+  let html='';
   if(expired.length){ html+=`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--danger);margin-bottom:4px">🔴 Expired (${expired.length})</div>`+expired.map(it=>row(it,'exp')).join(''); }
   if(soon.length){ html+=`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin:12px 0 4px">🟡 Expiring within 30 days (${soon.length})</div>`+soon.map(it=>row(it,'soon')).join(''); }
-  html+='</div>';
-  card.innerHTML=html;
+  body.innerHTML=html;
+}
+function openVaccDetail(){
+  document.getElementById('vacc-detail-mo').classList.add('on');
 }
 
 async function deleteDog(id) {
@@ -124,8 +136,8 @@ function renderDogList() {
   c.innerHTML='<div class="dog-list">'+sorted.map(d=>{
     const rv=vaccStatus(d.vacc_rabies), dv=vaccStatus(d.vacc_dhpp), bv=vaccStatus(d.vacc_bordetella);
     return `
-    <div class="di">
-      <div class="da">${d.photo?`<img src="${d.photo}" alt="">`:'🐶'}</div>
+    <div class="di" onclick="openDogDrawer('${d.id}')" style="cursor:pointer">
+      <div class="da" onclick="event.stopPropagation()">${d.photo?`<img src="${d.photo}" alt="">`:'🐶'}</div>
       <div style="flex:1;min-width:0">
         <div class="dname">${esc(d.dog_name)}${d.breed?` <span style="font-size:11px;font-weight:400;color:var(--ink-faint)">· ${esc(d.breed)}</span>`:''}</div>
         <div class="downer">${esc(d.owner_name)}</div>
@@ -270,6 +282,16 @@ async function saveEditDog(){
   }catch(e){ setSyncState('err'); toast('Error: '+e.message, true); }
 }
 let dogHistId=null;
+function openAddDogMo() {
+  document.getElementById('add-dog-mo').classList.add('on');
+}
+function closeAddDogMo() {
+  document.getElementById('add-dog-mo').classList.remove('on');
+}
+document.addEventListener('DOMContentLoaded', function() {
+  const addMo = document.getElementById('add-dog-mo');
+  if(addMo) addMo.addEventListener('click', function(e){ if(e.target===this) closeAddDogMo(); });
+});
 function openDogHistory(id){
   const d=dogs.find(x=>x.id===id); if(!d) return;
   dogHistId=id;

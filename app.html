@@ -241,58 +241,13 @@
 
       <!-- DOGS -->
       <div id="pg-dogs" class="pg">
-        <div class="ph"><h1>Dog Profiles</h1><p>Shared across all users in real time.</p></div>
-        <div id="vacc-status-card"></div>
-        <div class="card">
-          <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add New Dog</div>
-          <div style="display:flex;gap:18px;align-items:flex-start" class="dog-add-row">
-            <div class="pu-wrap">
-              <div class="pu" onclick="document.getElementById('pfi').click()" id="pu-el">
-                <div id="ppw"><div class="upl">🐶</div><p>Add photo</p></div>
-              </div>
-              <input type="file" id="pfi" accept="image/*" style="display:none" onchange="handlePhoto(this)">
-            </div>
-            <div style="flex:1;min-width:0">
-              <div class="g2" style="margin-bottom:11px">
-                <div class="fd"><label>Dog Name *</label><input type="text" id="nd-name" placeholder="e.g. Buddy"></div>
-                <div class="fd"><label>Owner Name *</label><input type="text" id="nd-owner" placeholder="e.g. Sarah Johnson"></div>
-                <div class="fd"><label>Phone</label><input type="tel" id="nd-phone" placeholder="(555) 123-4567"></div>
-                <div class="fd"><label>Owner Email</label><input type="email" id="nd-email" placeholder="owner@email.com"></div>
-                <div class="fd"><label>Custom Rate ($/day)</label><input type="number" id="nd-rate" placeholder="Blank = default" step="0.01" min="0"></div>
-              </div>
-              <div class="fd" style="margin-bottom:11px">
-                <label>Breed</label>
-                <div class="breed-wrap"><input type="text" id="nd-breed" placeholder="Type to search breed…" autocomplete="off" oninput="filterBreeds(this)" onkeydown="breedKey(event)"><div class="breed-dd" id="breed-dd"></div></div>
-              </div>
-              <div class="fd" style="margin-bottom:12px"><label>Notes / Special Care</label><textarea id="nd-notes" style="height:52px" placeholder="e.g. Meds at 6pm, friendly with other dogs"></textarea></div>
-              <div style="border-top:1px solid var(--cream-dark);padding-top:13px;margin-bottom:12px">
-                <div style="font-size:11px;font-weight:600;color:var(--ink-mid);letter-spacing:.03em;margin-bottom:10px">🐾 Behavior & Habits</div>
-                <div class="g2" style="margin-bottom:10px">
-                  <div class="fd"><label>Temperament</label><select id="nd-t-temp"><option value="">—</option><option>Calm</option><option>Friendly</option><option>Shy</option><option>Anxious</option><option>Reactive</option></select></div>
-                  <div class="fd"><label>Gets Along w/ Other Dogs</label><select id="nd-t-social"><option value="">—</option><option>Yes</option><option>Selective</option><option>No</option><option>Unknown</option></select></div>
-                  <div class="fd"><label>Energy Level</label><select id="nd-t-energy"><option value="">—</option><option>Low</option><option>Moderate</option><option>High</option></select></div>
-                  <div class="fd"><label>Playfulness</label><select id="nd-t-play"><option value="">—</option><option>Low</option><option>Moderate</option><option>High</option></select></div>
-                  <div class="fd"><label>Eating Habits</label><select id="nd-t-eat"><option value="">—</option><option>Good eater</option><option>Picky</option><option>Needs encouragement</option><option>Special diet</option></select></div>
-                </div>
-                <div class="fd"><label>Handling Notes</label><textarea id="nd-t-handling" style="height:46px" placeholder="e.g. Food-motivated, hates thunder, needs slow intro to new dogs"></textarea></div>
-              </div>
-              <div style="border-top:1px solid var(--cream-dark);padding-top:13px;margin-bottom:12px">
-                <div style="font-size:11px;font-weight:600;color:var(--ink-mid);letter-spacing:.03em;margin-bottom:10px">💉 Vaccination Records</div>
-                <div class="g2" style="margin-bottom:11px">
-                  <div class="fd"><label>Rabies Expiry</label><input type="date" id="nd-v-rabies"></div>
-                  <div class="fd"><label>DHPP Expiry</label><input type="date" id="nd-v-dhpp"></div>
-                  <div class="fd"><label>Bordetella Expiry</label><input type="date" id="nd-v-bord"></div>
-                </div>
-                <div class="fd">
-                  <label>Upload Vaccination Records (all 3 together — PDF/Image)</label>
-                  <div class="file-box" id="vacc-box" onclick="document.getElementById('vacc-file').click()"><div id="vacc-box-content"><div style="font-size:20px;margin-bottom:3px">📎</div><div style="font-size:12px;font-weight:600;color:var(--ink-mid)">Click to attach records</div><div style="font-size:11px;color:var(--ink-faint);margin-top:2px">PDF, JPG, PNG — max 5MB</div></div></div>
-                  <input type="file" id="vacc-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleVaccFile(this)">
-                </div>
-              </div>
-              <button class="btn btn-p" onclick="addDog()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add Dog</button>
-            </div>
-          </div>
+        <div class="ph" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div><h1>Dog Profiles</h1><p>Shared across all users in real time.</p></div>
+          <button class="btn btn-p" onclick="openAddDogMo()" style="flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add Dog
+          </button>
         </div>
+        <div id="vacc-status-card"></div>
         <div class="card">
           <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M8 11l4 4 4-4M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>Import / Export</div>
           <p style="font-size:12px;color:var(--ink-faint);margin-bottom:13px;line-height:1.6">Export your dog list to Excel (.xlsx) or import from a spreadsheet. Columns: <strong>Dog Name, Owner Name, Phone, Custom Rate, Notes</strong>. Duplicates (same name + owner) are skipped on import.</p>
@@ -723,5 +678,62 @@
     </div>
   </div>
 </div>
+<!-- Add Dog modal -->
+<div class="mo" id="add-dog-mo"><div class="mo-inner" style="max-width:680px"><div class="mo-head"><h3>Add New Dog</h3><button class="btn btn-o sm" onclick="closeAddDogMo()">Close</button></div>
+<div class="mo-body">
+  <div style="display:flex;gap:18px;align-items:flex-start" class="dog-add-row">
+    <div class="pu-wrap">
+      <div class="pu" onclick="document.getElementById('pfi').click()" id="pu-el">
+        <div id="ppw"><div class="upl">🐶</div><p>Add photo</p></div>
+      </div>
+      <input type="file" id="pfi" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+    </div>
+    <div style="flex:1;min-width:0">
+      <div class="g2" style="margin-bottom:11px">
+        <div class="fd"><label>Dog Name *</label><input type="text" id="nd-name" placeholder="e.g. Buddy"></div>
+        <div class="fd"><label>Owner Name *</label><input type="text" id="nd-owner" placeholder="e.g. Sarah Johnson"></div>
+        <div class="fd"><label>Phone</label><input type="tel" id="nd-phone" placeholder="(555) 123-4567"></div>
+        <div class="fd"><label>Owner Email</label><input type="email" id="nd-email" placeholder="owner@email.com"></div>
+        <div class="fd"><label>Custom Rate ($/day)</label><input type="number" id="nd-rate" placeholder="Blank = default" step="0.01" min="0"></div>
+      </div>
+      <div class="fd" style="margin-bottom:11px">
+        <label>Breed</label>
+        <div class="breed-wrap"><input type="text" id="nd-breed" placeholder="Type to search breed…" autocomplete="off" oninput="filterBreeds(this)" onkeydown="breedKey(event)"><div class="breed-dd" id="breed-dd"></div></div>
+      </div>
+      <div class="fd" style="margin-bottom:12px"><label>Notes / Special Care</label><textarea id="nd-notes" style="height:52px" placeholder="e.g. Meds at 6pm, friendly with other dogs"></textarea></div>
+      <div style="border-top:1px solid var(--cream-dark);padding-top:13px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-mid);letter-spacing:.03em;margin-bottom:10px">🐾 Behavior & Habits</div>
+        <div class="g2" style="margin-bottom:10px">
+          <div class="fd"><label>Temperament</label><select id="nd-t-temp"><option value="">—</option><option>Calm</option><option>Friendly</option><option>Shy</option><option>Anxious</option><option>Reactive</option></select></div>
+          <div class="fd"><label>Gets Along w/ Other Dogs</label><select id="nd-t-social"><option value="">—</option><option>Yes</option><option>Selective</option><option>No</option><option>Unknown</option></select></div>
+          <div class="fd"><label>Energy Level</label><select id="nd-t-energy"><option value="">—</option><option>Low</option><option>Moderate</option><option>High</option></select></div>
+          <div class="fd"><label>Playfulness</label><select id="nd-t-play"><option value="">—</option><option>Low</option><option>Moderate</option><option>High</option></select></div>
+          <div class="fd"><label>Eating Habits</label><select id="nd-t-eat"><option value="">—</option><option>Good eater</option><option>Picky</option><option>Needs encouragement</option><option>Special diet</option></select></div>
+        </div>
+        <div class="fd"><label>Handling Notes</label><textarea id="nd-t-handling" style="height:46px" placeholder="e.g. Food-motivated, hates thunder, needs slow intro to new dogs"></textarea></div>
+      </div>
+      <div style="border-top:1px solid var(--cream-dark);padding-top:13px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--ink-mid);letter-spacing:.03em;margin-bottom:10px">💉 Vaccination Records</div>
+        <div class="g2" style="margin-bottom:11px">
+          <div class="fd"><label>Rabies Expiry</label><input type="date" id="nd-v-rabies"></div>
+          <div class="fd"><label>DHPP Expiry</label><input type="date" id="nd-v-dhpp"></div>
+          <div class="fd"><label>Bordetella Expiry</label><input type="date" id="nd-v-bord"></div>
+        </div>
+        <div class="fd">
+          <label>Upload Vaccination Records (PDF/Image)</label>
+          <div class="file-box" id="vacc-box" onclick="document.getElementById('vacc-file').click()"><div id="vacc-box-content"><div style="font-size:20px;margin-bottom:3px">📎</div><div style="font-size:12px;font-weight:600;color:var(--ink-mid)">Click to attach records</div><div style="font-size:11px;color:var(--ink-faint);margin-top:2px">PDF, JPG, PNG — max 5MB</div></div></div>
+          <input type="file" id="vacc-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleVaccFile(this)">
+        </div>
+      </div>
+      <button class="btn btn-p" onclick="addDog()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add Dog</button>
+    </div>
+  </div>
+</div></div></div>
+
+<!-- Vaccination Details modal -->
+<div class="mo" id="vacc-detail-mo"><div class="mo-inner" style="max-width:600px"><div class="mo-head"><h3>Vaccination Status</h3><button class="btn btn-o sm" onclick="document.getElementById('vacc-detail-mo').classList.remove('on')">Close</button></div>
+<div class="mo-body" id="vacc-detail-body"></div>
+</div></div>
+
 </body>
 </html>
