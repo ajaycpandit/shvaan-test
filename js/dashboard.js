@@ -31,11 +31,14 @@ function renderDashboard(){
   const overdue=onSite.filter(r=>new Date(r.checkout)<now);
   const noVacc=onSite.filter(r=>{ const exp=v=>v&&new Date(v)<now; return reqDogIds(r).some(id=>{ const d=dogs.find(x=>x.id===id); return d&&(exp(d.vacc_rabies)||exp(d.vacc_dhpp)||exp(d.vacc_bordetella)); }); });
   const att=[];
-  if(overdue.length) att.push(`${overdue.length} overdue checkout${overdue.length!==1?'s':''}`);
-  if(pending) att.push(`${pending} pending request${pending!==1?'s':''}`);
-  if(noVacc.length) att.push(`${noVacc.length} on-site dog${noVacc.length!==1?'s':''} with expired vaccines`);
-  if(onSite.length>cap) att.push(`Over capacity by ${onSite.length-cap}`);
-  document.getElementById('dash-attention').innerHTML = att.length?`<div class="card" style="border-color:#EAB0AC;background:var(--danger-pale);margin-bottom:14px"><div style="display:flex;align-items:center;gap:9px"><span style="font-size:18px">⚠️</span><div style="font-size:13px;color:var(--danger);font-weight:600">Needs attention: ${att.join(' · ')}</div></div></div>`:'';
+  if(overdue.length) att.push(`<a style="cursor:pointer;text-decoration:underline" onclick="goPage('requests')">${overdue.length} overdue checkout${overdue.length!==1?'s':''}</a>`);
+  if(pending) att.push(`<a style="cursor:pointer;text-decoration:underline" onclick="goPage('requests')">${pending} pending request${pending!==1?'s':''}</a>`);
+  if(noVacc.length) att.push(`<a style="cursor:pointer;text-decoration:underline" onclick="goPage('dogs')">${noVacc.length} on-site dog${noVacc.length!==1?'s':''} with expired vaccines</a>`);
+  if(onSite.length>cap) att.push(`<span>Over capacity by ${onSite.length-cap}</span>`);
+  // Unpaid invoices
+  const unpaid=bookings.filter(b=>!b.paid);
+  if(unpaid.length) att.push(`<a style="cursor:pointer;text-decoration:underline" onclick="goPage('finance')">${unpaid.length} unpaid invoice${unpaid.length!==1?'s':''}</a>`);
+  document.getElementById('dash-attention').innerHTML = att.length?`<div class="card" style="border-color:#EAB0AC;background:var(--danger-pale);margin-bottom:14px"><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span style="font-size:18px">⚠️</span><div style="font-size:13px;color:var(--danger);font-weight:600;display:flex;gap:6px;flex-wrap:wrap;align-items:center">Needs attention: ${att.join(' <span style="opacity:.5">·</span> ')}</div></div></div>`:'';
 
   // KPI cards
   const kpi=(label,val,sub,color)=>`<div class="card" style="margin:0;padding:16px 14px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint)">${label}</div><div style="font-family:'DM Serif Display',serif;font-size:26px;color:${color||'var(--ink)'};margin-top:3px;line-height:1.1">${val}</div>${sub?`<div style="font-size:11px;color:var(--ink-faint);margin-top:3px">${sub}</div>`:''}</div>`;
@@ -48,12 +51,12 @@ function renderDashboard(){
   // Ops: arrivals & departures with actions
   const arrRow=arrivals.length?arrivals.map(r=>{
     const dog=dogs.find(x=>x.id===r.dog_id);
-    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--cream-mid)"><div class="dd-ava" style="width:30px;height:30px;font-size:14px">${dog&&dog.photo?`<img src="${dog.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(r.dog_name)}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(r.checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${r.service==='boarding'?'Boarding':'Day Care'}</div></div><button class="btn btn-b sm" onclick="openCheckIn('${r.id}')">Check In</button></div>`;
+    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--cream-mid);cursor:pointer" onclick="openResDetail('${r.id}')"><div class="dd-ava" style="width:30px;height:30px;font-size:14px">${dog&&dog.photo?`<img src="${dog.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(r.dog_name)}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(r.checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})} · ${r.service==='boarding'?'Boarding':'Day Care'}</div></div><button class="btn btn-b sm" onclick="event.stopPropagation();openCheckIn('${r.id}')">Check In</button></div>`;
   }).join(''):'<div style="font-size:12px;color:var(--ink-faint);padding:10px 0">No arrivals scheduled today 🐾</div>';
   const depRow=departures.length?departures.map(r=>{
     const dog=dogs.find(x=>x.id===r.dog_id);
     const overdueTag=new Date(r.checkout)<now?' <span class="bdg bdg-r" style="background:var(--danger-pale);color:var(--danger);border:1px solid #EAB0AC">overdue</span>':'';
-    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--cream-mid)"><div class="dd-ava" style="width:30px;height:30px;font-size:14px">${dog&&dog.photo?`<img src="${dog.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(r.dog_name)}${overdueTag}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(r.checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div></div><button class="btn btn-g sm" onclick="openCheckOut('${r.id}')">Check Out</button></div>`;
+    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--cream-mid);cursor:pointer" onclick="openResDetail('${r.id}')"><div class="dd-ava" style="width:30px;height:30px;font-size:14px">${dog&&dog.photo?`<img src="${dog.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(r.dog_name)}${overdueTag}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(r.checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div></div><button class="btn btn-g sm" onclick="event.stopPropagation();openCheckOut('${r.id}')">Check Out</button></div>`;
   }).join(''):'<div style="font-size:12px;color:var(--ink-faint);padding:10px 0">No departures today</div>';
   document.getElementById('dash-ops').innerHTML=
     `<div class="card" style="margin-bottom:14px"><div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Arrivals Today (${arrivals.length})</div>${arrRow}</div>`+

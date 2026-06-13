@@ -100,7 +100,7 @@ function renderRequests(){
       actions=`<button class="btn btn-o sm" onclick="updateReq('${r.id}','pending')">Reset to Pending</button>`;
     }
     const editBtn=st!=='completed'?`<button class="btn btn-o sm" onclick="openEditReq('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit</button>`:'';
-    return `<div class="req-card"><div class="req-header"><div><div class="req-title">${esc(r.dog_name)}</div><div class="req-sub">${esc(r.owner_name)}</div></div><span class="req-status ${cls}">${lbl}</span></div>
+    return `<div class="req-card"><div class="req-header" style="cursor:pointer" onclick="openResDetail('${r.id}')"><div><div class="req-title">${esc(r.dog_name)}</div><div class="req-sub">${esc(r.owner_name)}</div></div><span class="req-status ${cls}">${lbl}</span></div>
     <div class="req-meta"><span>${r.service==='boarding'?'🏡 Boarding':'☀️ Day Care'}</span><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>${fd(r.checkin)} ${ft(r.checkin)} → ${fd(r.checkout)} ${ft(r.checkout)}</span>${r.notes?`<span>📋 ${esc(r.notes)}</span>`:''}${actualLine}${priceLine}</div>
     <div class="hac">${actions}${editBtn}<button class="btn btn-d sm" onclick="delRequest('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete</button></div></div>`;
   }).join('');
@@ -274,3 +274,102 @@ async function saveEditReq(){
   }catch(e){ setSyncState('err'); toast('Error: '+e.message, true); }
 }
 function tStr(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+
+/* ── Reservation detail popup ──────────────────────────────── */
+function openResDetail(id) {
+  const r = requests.find(x => x.id === id);
+  if (!r) return;
+  const dog = dogs.find(x => x.id === r.dog_id);
+  const fd = s => { try { return new Date(s).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}); } catch(e) { return ''; } };
+  const ft = s => { try { return new Date(s).toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'}); } catch(e) { return ''; } };
+
+  // Header
+  const avEl = document.getElementById('rd-ava');
+  avEl.innerHTML = dog && dog.photo ? `<img src="${dog.photo}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : '🐶';
+  document.getElementById('rd-title').textContent = r.dog_name || '—';
+  document.getElementById('rd-subtitle').textContent = (r.owner_name || '') + ' · ' + (r.service === 'boarding' ? '🏡 Boarding' : '☀️ Day Care');
+
+  // Badges
+  const stColors = {pending:'var(--gold-pale)',confirmed:'var(--forest-pale)',checked_in:'var(--forest-pale)',completed:'var(--cream-mid)'};
+  const stText = {pending:'var(--gold)',confirmed:'var(--forest)',checked_in:'var(--forest)',completed:'var(--ink-faint)'};
+  const stLabel = {pending:'Pending',confirmed:'Confirmed',checked_in:'Checked In',completed:'Completed'}[r.status] || r.status;
+  let badges = `<span class="rd-badge" style="background:${stColors[r.status]||'var(--cream-mid)'};color:${stText[r.status]||'var(--ink-faint)'}">${stLabel}</span>`;
+  if (dog) {
+    const vb = typeof dogVaccBadge === 'function' ? dogVaccBadge(dog) : null;
+    if (vb) badges += `<span class="rd-badge vbdg ${vb.cls}">💉 ${vb.label}</span>`;
+    if (dog.rate_override != null) badges += `<span class="rd-badge" style="background:var(--forest-pale);color:var(--forest)">$${parseFloat(dog.rate_override).toFixed(2)}/night</span>`;
+  }
+  document.getElementById('rd-badges').innerHTML = badges;
+
+  // Body sections
+  let html = '';
+
+  // Dates section
+  html += `<div class="rd-section">
+    <div class="rd-sec-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Stay details</div>
+    <div class="rd-sec-body">
+      <div class="rd-field"><span class="rd-fl">Check-in</span><span class="rd-fv">${fd(r.checkin)} at ${ft(r.checkin)}</span></div>
+      <div class="rd-field"><span class="rd-fl">Check-out</span><span class="rd-fv">${fd(r.checkout)} at ${ft(r.checkout)}</span></div>
+      ${r.actual_checkin ? `<div class="rd-field"><span class="rd-fl">Actual check-in</span><span class="rd-fv">${fd(r.actual_checkin)} at ${ft(r.actual_checkin)}</span></div>` : ''}
+      ${r.actual_checkout ? `<div class="rd-field"><span class="rd-fl">Actual check-out</span><span class="rd-fv">${fd(r.actual_checkout)} at ${ft(r.actual_checkout)}</span></div>` : ''}
+      ${r.final_total ? `<div class="rd-field"><span class="rd-fl">Final total</span><span class="rd-fv" style="font-size:15px;color:var(--brown-dark)">$${parseFloat(r.final_total).toFixed(2)}</span></div>` : ''}
+      ${r.notes ? `<div class="rd-field"><span class="rd-fl">Notes</span><span class="rd-fv" style="font-weight:400;text-align:right;max-width:60%">${esc(r.notes)}</span></div>` : ''}
+    </div>
+  </div>`;
+
+  // Dog profile section
+  if (dog) {
+    const t = dog.traits || {};
+    html += `<div class="rd-section">
+      <div class="rd-sec-head" style="cursor:pointer" onclick="closeResDetail();setTimeout(()=>openDogDrawer('${dog.id}'),150)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>Dog profile <span style="margin-left:auto;font-size:11px;color:var(--brown);font-weight:600">View full profile →</span></div>
+      <div class="rd-sec-body">
+        ${dog.breed ? `<div class="rd-field"><span class="rd-fl">Breed</span><span class="rd-fv">${esc(dog.breed)}</span></div>` : ''}
+        ${t.temperament ? `<div class="rd-field"><span class="rd-fl">Temperament</span><span class="rd-fv">${esc(t.temperament)}</span></div>` : ''}
+        ${t.social ? `<div class="rd-field"><span class="rd-fl">With other dogs</span><span class="rd-fv">${esc(t.social)}</span></div>` : ''}
+        ${t.eating ? `<div class="rd-field"><span class="rd-fl">Eating</span><span class="rd-fv">${esc(t.eating)}</span></div>` : ''}
+        ${dog.phone ? `<div class="rd-field"><span class="rd-fl">Owner phone</span><span class="rd-fv"><a href="tel:${dog.phone}" style="color:var(--brown);text-decoration:none">${esc(dog.phone)}</a></span></div>` : ''}
+        ${dog.owner_email ? `<div class="rd-field"><span class="rd-fl">Owner email</span><span class="rd-fv"><a href="mailto:${dog.owner_email}" style="color:var(--brown);text-decoration:none">${esc(dog.owner_email)}</a></span></div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // Recent notes for this dog
+  const notes = (typeof visitNotes !== 'undefined') ? visitNotes.filter(n => n.dog_id === r.dog_id).slice(0, 3) : [];
+  if (notes.length) {
+    html += `<div class="rd-section">
+      <div class="rd-sec-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Recent notes</div>
+      <div class="rd-sec-body">${notes.map(n => `<div style="padding:6px 0;border-bottom:1px solid var(--cream-mid);font-size:12px"><span style="color:var(--ink)">${esc(n.note)}</span><div style="font-size:10px;color:var(--ink-faint);margin-top:2px">${fd(n.created_at)} · ${esc(n.created_by || n.staff || 'Staff')}</div></div>`).join('')}</div>
+    </div>`;
+  }
+
+  // Invoice link
+  if (r.booking_id) {
+    const booking = bookings.find(b => b.id === r.booking_id);
+    if (booking) {
+      html += `<div class="rd-section">
+        <div class="rd-sec-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Invoice</div>
+        <div class="rd-sec-body">
+          <div class="rd-field"><span class="rd-fl">Total</span><span class="rd-fv" style="font-size:15px">$${parseFloat(booking.grand_total || 0).toFixed(2)}</span></div>
+          <div class="rd-field"><span class="rd-fl">Status</span><span class="rd-fv">${booking.paid ? '<span style="color:var(--forest)">Paid</span>' : '<span style="color:var(--danger)">Unpaid</span>'}</span></div>
+          <button class="btn btn-o sm" onclick="closeResDetail();openInv('${booking.id}')" style="width:100%;margin-top:8px">View full invoice</button>
+        </div>
+      </div>`;
+    }
+  }
+
+  document.getElementById('rd-body').innerHTML = html;
+
+  // Action buttons
+  let actions = '';
+  if (r.status === 'pending') actions = `<button class="btn btn-b" onclick="closeResDetail();updateReq('${r.id}','confirmed')" style="flex:1">Confirm</button><button class="btn btn-o" onclick="closeResDetail();updateReq('${r.id}','cancelled')" style="flex:1">Decline</button>`;
+  else if (r.status === 'confirmed') actions = `<button class="btn btn-b" onclick="closeResDetail();openCheckIn('${r.id}')" style="flex:1">Check In</button>`;
+  else if (r.status === 'checked_in') actions = `<button class="btn btn-g" onclick="closeResDetail();openCheckOut('${r.id}')" style="flex:1">Check Out & Bill</button>`;
+  if (dog) actions += `<button class="btn btn-o" onclick="closeResDetail();setTimeout(()=>openDogDrawer('${r.dog_id}'),150)">Dog profile</button>`;
+  document.getElementById('rd-actions').innerHTML = actions;
+
+  document.getElementById('res-detail-mo').classList.add('on');
+}
+
+function closeResDetail() {
+  document.getElementById('res-detail-mo').classList.remove('on');
+}
