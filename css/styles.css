@@ -120,6 +120,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);m
 .cal-event.out{background:var(--gold-pale);color:var(--gold)}
 .cal-event.stay{background:var(--bluep);color:var(--blue)}
 .cal-event.req{background:#F0EDFB;color:#6B4FA0}
+.cal-event.meet{background:#FAEEDA;color:#854F0B;font-weight:600}
 .cal-event.more{background:var(--cream-mid);color:var(--ink-faint);font-style:italic}
 .cal-legend{display:flex;gap:13px;padding:11px 18px;flex-wrap:wrap;border-top:1px solid var(--cream-mid)}
 .cal-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-light)}
