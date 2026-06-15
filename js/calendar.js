@@ -48,6 +48,8 @@ function renderCalendar(){
   const total=first+days, nextFill=total%7===0?0:7-(total%7);
   for(let d=1;d<=nextFill;d++){ const nd=new Date(calYear,calMonth+1,d); html+=`<div class="cal-day other-month" onclick="openDayMo('${dStr(nd)}')"><div class="cal-day-num">${d}</div></div>`; }
   grid.innerHTML=html;
+  // Wire up calendar interactions (clickable dogs and dates)
+  if(typeof wireUpCalendarInteractions==='function') wireUpCalendarInteractions();
 }
 function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
 function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
