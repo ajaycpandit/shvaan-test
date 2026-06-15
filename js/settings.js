@@ -12,10 +12,56 @@ function renderSettings() {
   updateScPrev();
   if(typeof renderRoleTemplates === 'function') renderRoleTemplates();
   if(typeof updateThemeSettingsRow === 'function') updateThemeSettingsRow();
-  if(typeof renderSurchargeSettings === 'function') renderSurchargeSettings();
+  
+  // Render surcharge settings directly
+  const surchargeDiv = document.getElementById('settings-surcharge');
+  if(surchargeDiv){
+    const sType = s.surchargeType || 'percent';
+    const sPct = s.surchargePct || 25;
+    const sAmt = s.surchargeAmt || 15;
+    surchargeDiv.innerHTML = `
+      <div style="margin-top:12px;padding:12px;background:var(--cream-mid);border-radius:8px">
+        <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Surcharge Type</label>
+        <div style="display:flex;gap:10px;margin-bottom:12px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1">
+            <input type="radio" name="surcharge-type" value="percent" ${sType==='percent'?'checked':''} onchange="changeSurcharge('percent')">
+            <span>Percentage (%)</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1">
+            <input type="radio" name="surcharge-type" value="fixed" ${sType==='fixed'?'checked':''} onchange="changeSurcharge('fixed')">
+            <span>Fixed Amount ($)</span>
+          </label>
+        </div>
+        <label style="display:block;margin-bottom:4px;font-size:13px;font-weight:600">
+          ${sType==='percent'?'Surcharge %':'Surcharge Amount ($)'}
+        </label>
+        <input type="number" id="surcharge-val" value="${sType==='percent'?sPct:sAmt}" 
+          ${sType==='percent'?'step="1"':'step="0.01"'} min="0" 
+          style="width:100%;padding:8px;border:1px solid var(--cream-dark);border-radius:6px;font-family:inherit;font-size:14px"
+          onchange="updateSurcharge(this.value)">
+        <small style="display:block;margin-top:4px;color:var(--ink-faint);font-size:12px">
+          ${sType==='percent'?'% of daily rate':'$ per surcharge'}
+        </small>
+      </div>
+    `;
+  }
+  
   // Team management — admin only
   const tc=document.getElementById('team-card');
   if(tc){ if(isAdmin()){ tc.style.display=''; renderTeamList(); tmRenderPerms(); tmRoleChange(); } else { tc.style.display='none'; } }
+}
+
+function changeSurcharge(type){
+  settings.surchargeType = type;
+  if(typeof dbUpdSet === 'function') dbUpdSet({surchargeType: type});
+  renderSettings();
+}
+
+function updateSurcharge(val){
+  const num = parseFloat(val) || 0;
+  const key = settings.surchargeType === 'percent' ? 'surchargePct' : 'surchargeAmt';
+  settings[key] = num;
+  if(typeof dbUpdSet === 'function') dbUpdSet({[key]: num});
 }
 
 /* ── Role templates ───────────────────────────────────────── */

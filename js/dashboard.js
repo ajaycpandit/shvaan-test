@@ -207,56 +207,8 @@ function quickCheckIn(requestId){
 }
 
 // FEATURE 2: Surcharge Settings - PROPER RADIO BUTTONS
-function renderSurchargeSettings(){
-  const s = settings || {};
-  const sType = s.surchargeType || 'percent';
-  const sPct = s.surchargePct || 25;
-  const sAmt = s.surchargeAmt || 15;
-  
-  const html = `
-    <div style="margin-top:14px">
-      <label style="display:block;margin-bottom:10px;font-weight:600">Surcharge Type</label>
-      <div style="display:flex;gap:12px;margin-bottom:14px">
-        <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--cream-mid);border-radius:8px;cursor:pointer;flex:1">
-          <input type="radio" name="surcharge-type" value="percent" ${sType==='percent'?'checked':''} onchange="changeSurchargeType('percent')">
-          <span style="font-weight:500">Percentage (%)</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--cream-mid);border-radius:8px;cursor:pointer;flex:1">
-          <input type="radio" name="surcharge-type" value="fixed" ${sType==='fixed'?'checked':''} onchange="changeSurchargeType('fixed')">
-          <span style="font-weight:500">Fixed Amount ($)</span>
-        </label>
-      </div>
-      
-      <label style="display:block;margin-bottom:6px;font-weight:500">
-        ${sType==='percent'?'Surcharge %':'Surcharge Amount ($)'}
-      </label>
-      <input type="number" id="surcharge-val" value="${sType==='percent'?sPct:sAmt}" 
-        ${sType==='percent'?'step="1"':'step="0.01"'} min="0" style="width:120px;padding:8px;border:1px solid var(--cream-dark);border-radius:6px"
-        onchange="updateSurchargeValue(this.value)">
-      <small style="display:block;margin-top:6px;color:var(--ink-faint)">${sType==='percent'?'% of daily rate':'$ per surcharge'}</small>
-    </div>
-  `;
-  
-  const settingsDiv = document.getElementById('settings-surcharge');
-  if(settingsDiv) settingsDiv.innerHTML = html;
-}
 
-function changeSurchargeType(type){
-  settings.surchargeType = type;
-  if(typeof dbUpdSet === 'function'){
-    dbUpdSet({surchargeType: type});
-  }
-  renderSurchargeSettings();
-}
 
-function updateSurchargeValue(val){
-  const num = parseFloat(val) || 0;
-  const key = settings.surchargeType === 'percent' ? 'surchargePct' : 'surchargeAmt';
-  settings[key] = num;
-  if(typeof dbUpdSet === 'function'){
-    dbUpdSet({[key]: num});
-  }
-}
 
 // FEATURE 3: Day Navigation
 let browseDate = new Date();
@@ -330,4 +282,9 @@ function todayDay(){
   browseDate = new Date();
   renderDayNavigation();
 }
+
+// FIXED: Surcharge Settings Rendering
+
+
+
 
