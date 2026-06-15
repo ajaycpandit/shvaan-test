@@ -107,7 +107,7 @@ function doLogout(){
   authToken=null; currentUser=null;
   if(_refreshTimer) clearTimeout(_refreshTimer);
   try{ localStorage.removeItem('shvaan_session'); }catch(e){}
-  location.reload();
+  window.location.href='index.html';
 }
 tryRestoreSession();
 
