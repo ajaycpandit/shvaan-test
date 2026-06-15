@@ -1,259 +1,175 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shvaan Pet Care - Calculator</title>
-  <link rel="stylesheet" href="site.css">
-  <style>
-    body { background: var(--cream); color: var(--ink); font-family: 'DM Sans', sans-serif; }
-    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
-    .card { background: white; border-radius: 8px; padding: 24px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .sec-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-faint); margin: 16px 0 12px; }
-    .fd { margin-bottom: 14px; }
-    .fd label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-    .fd input, .fd select { width: 100%; height: 46px; padding: 0 13px; border: 1.5px solid var(--cream-dark); border-radius: 4px; background: white; color: var(--ink); font-size: 14px; font-family: 'DM Sans', sans-serif; outline: none; }
-    .fd input:focus, .fd select:focus { border-color: var(--brown); }
-    .btn { background: var(--brown); color: white; border: none; border-radius: 4px; padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; }
-    .btn:hover { background: var(--brown-dark); }
-    .result-line { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--cream); font-size: 14px; }
-    .result-line.total { font-weight: 700; font-size: 16px; border-bottom: none; padding-top: 14px; margin-top: 6px; }
-    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    #res { display: none; margin-top: 16px; }
-    #prev { display: none; color: var(--ink-faint); font-size: 13px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Boarding Cost Calculator — Shvaan Pet Care</title>
+<meta name="description" content="Estimate the cost of boarding or day care for your dog at Shvaan Pet Care in Austin, TX.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#FBF6EF;--cream-mid:#F5ECE0;--cream-dark:#EAD9C6;
+  --brown-dark:#C25E18;--brown:#E07B2E;--brown-light:#F0A868;
+  --ink:#2A211A;--ink-mid:#4F4339;--ink-light:#7E6F61;--ink-faint:#B3A595;
+  --white:#FFF;--danger:#D9534F;--forest:#2E8B82;--forest-pale:#EAF4F3;
+  --gold-pale:#FBF0DD;--r1:6px;--r2:10px;--r3:16px;--r4:20px;
+}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);line-height:1.6;min-height:100vh}
+
+/* top bar */
+.topbar{background:var(--brown-dark);padding:11px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.topbar a.back{color:rgba(255,255,255,.88);font-size:13px;text-decoration:none;display:flex;align-items:center;gap:6px}
+.topbar a.back:hover{color:#fff}
+.topbar a.cta{background:var(--white);color:var(--brown-dark);font-size:13px;font-weight:600;padding:7px 14px;border-radius:var(--r2);text-decoration:none;white-space:nowrap}
+
+.wrap{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+.hero{text-align:center;margin-bottom:28px}
+.hero h1{font-family:'DM Serif Display',serif;font-size:30px;color:var(--ink);margin-bottom:8px}
+.hero p{font-size:15px;color:var(--ink-light);max-width:480px;margin:0 auto}
+
+.card{background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--r4);padding:24px;box-shadow:0 4px 18px rgba(42,33,26,.06);margin-bottom:18px}
+.ct{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:14px}
+
+.seg{display:flex;background:var(--cream-mid);border:1.5px solid var(--cream-dark);border-radius:14px;padding:4px;gap:4px;margin-bottom:18px}
+.seg button{flex:1;padding:12px;border:none;background:none;border-radius:10px;font-size:15px;font-weight:500;color:var(--ink-light);cursor:pointer;font-family:'DM Sans',sans-serif}
+.seg button.on{background:var(--white);color:var(--brown-dark);font-weight:600;box-shadow:0 1px 4px rgba(42,33,26,.1)}
+
+.fd{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.fd label{font-size:12px;font-weight:600;color:var(--ink-mid)}
+.fd input,.fd select{height:48px;padding:0 13px;border:1.5px solid var(--cream-dark);border-radius:10px;background:var(--cream);color:var(--ink);font-size:16px;font-family:'DM Sans',sans-serif;outline:none;width:100%;-webkit-appearance:none}
+.fd input:focus,.fd select:focus{border-color:var(--brown);box-shadow:0 0 0 3px rgba(224,123,46,.13);background:var(--white)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.g2{grid-template-columns:1fr}}
+
+.result{background:var(--cream-mid);border:1.5px solid var(--cream-dark);border-radius:var(--r3);padding:20px;margin-top:6px}
+.rline{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:14px;color:var(--ink-mid);border-bottom:1px solid var(--cream-dark)}
+.rline:last-of-type{border-bottom:none}
+.rline .v{font-weight:600;color:var(--ink)}
+.gtotal{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:2px solid var(--cream-dark)}
+.gtotal .lbl{font-size:14px;font-weight:600;color:var(--ink-mid)}
+.gtotal .amt{font-family:'DM Serif Display',serif;font-size:30px;color:var(--brown-dark)}
+.est-note{font-size:12px;color:var(--ink-faint);margin-top:12px;line-height:1.5;text-align:center}
+.empty{text-align:center;padding:30px 20px;color:var(--ink-faint)}
+.empty .ei{font-size:36px;display:block;margin-bottom:8px;opacity:.7}
+
+.cta-band{background:var(--brown-dark);border-radius:var(--r4);padding:26px;text-align:center;color:#fff;margin-top:6px}
+.cta-band h2{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px}
+.cta-band p{font-size:14px;opacity:.9;margin-bottom:16px}
+.cta-band a{background:var(--white);color:var(--brown-dark);font-size:15px;font-weight:600;padding:12px 22px;border-radius:var(--r2);text-decoration:none;display:inline-block}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <h2>🐾 Boarding Cost Calculator</h2>
-      <p style="color: var(--ink-faint); font-size: 13px;">Calculate the cost for your dog's stay</p>
-    </div>
+<div class="topbar">
+  <a class="back" href="index.html">← Back to Shvaan Pet Care</a>
+  <a class="cta" href="book.html">Schedule a Meet &amp; Greet</a>
+</div>
 
-    <div class="card">
-      <div class="sec-title">Service & Dates</div>
-      <div class="g2">
-        <div class="fd">
-          <label>Service Type</label>
-          <select id="svc" style="height:46px;padding:0 13px;border:1.5px solid var(--cream-dark);border-radius:4px;background:white;color:var(--ink);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;">
-            <option value="boarding">Boarding (24hr)</option>
-            <option value="daycare">Day Care (per visit)</option>
-          </select>
-        </div>
-        <div class="fd">
-          <label>Check-In Date</label>
-          <input type="date" id="ci">
-        </div>
-      </div>
-      <div class="g2">
-        <div class="fd">
-          <label>Check-In Time</label>
-          <input type="time" id="cit" value="10:00">
-        </div>
-        <div class="fd">
-          <label>Check-Out Date</label>
-          <input type="date" id="co">
-        </div>
-      </div>
-      <div class="g2">
-        <div class="fd">
-          <label>Check-Out Time</label>
-          <input type="time" id="cot" value="10:00">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="sec-title">Rates (adjustable)</div>
-      <div class="g2">
-        <div class="fd">
-          <label>Boarding Rate ($/day)</label>
-          <input type="number" id="rate-b" value="75" step="1">
-        </div>
-        <div class="fd">
-          <label>Day Care Rate ($/visit)</label>
-          <input type="number" id="rate-d" value="45" step="1">
-        </div>
-      </div>
-
-      <div class="sec-title">Grace Period & Surcharge</div>
-      <div class="g2">
-        <div class="fd">
-          <label>Grace Period (hours after 24h)</label>
-          <input type="number" id="grace" value="3" step="0.5">
-        </div>
-        <div class="fd">
-          <label>Surcharge Type</label>
-          <select id="stype" style="height:46px;padding:0 13px;border:1.5px solid var(--cream-dark);border-radius:4px;background:white;color:var(--ink);font-size:14px;font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;">
-            <option value="fixed">Fixed Amount</option>
-            <option value="percent">Percentage of Daily Rate</option>
-          </select>
-        </div>
-      </div>
-      <div class="g2">
-        <div class="fd" id="surch-fixed-wrap">
-          <label>Surcharge Amount ($)</label>
-          <input type="number" id="surch" value="25" step="1">
-        </div>
-        <div class="fd" id="surch-pct-wrap" style="display:none;">
-          <label>Surcharge (% of daily rate)</label>
-          <input type="number" id="surch-pct" value="50" step="1" min="0" max="100">
-        </div>
-      </div>
-
-      <div class="sec-title">Weekend rates</div>
-      <div class="fd">
-        <label>Weekend multiplier (1.0 = same as weekday, 1.15 = 15% higher)</label>
-        <input type="number" id="weekend-mult" value="1.15" step="0.01" min="1.0">
-      </div>
-    </div>
-
-    <div class="card">
-      <button class="btn" onclick="calculate()" style="width:100%;">📊 Calculate Cost</button>
-      <div id="prev" style="margin-top:14px;"></div>
-    </div>
-
-    <div id="res" class="card">
-      <h3 style="margin-top:0;">💰 Cost Breakdown</h3>
-      <div id="res-content"></div>
-    </div>
+<div class="wrap">
+  <div class="hero">
+    <h1>Boarding Cost Calculator</h1>
+    <p>Get an instant estimate for your dog's stay. No account needed — just enter the dates and we'll show you the price.</p>
   </div>
 
-  <script>
-    // FIXED CALCULATION LOGIC
-    function calcStay(ratePerDay, checkinDt, checkoutDt, graceHours, surchType, surchAmount, surchPct, weekendMultiplier) {
-      weekendMultiplier = weekendMultiplier || 1.0;
-      const ms = checkoutDt - checkinDt;
-      const hrs = ms / 3600000;
-      const fullDays = Math.floor(hrs / 24);
-      const rem = hrs % 24;
-      
-      // Always bill minimum 1 day
-      const billedDays = Math.max(1, fullDays);
-      
-      // Count weekend days (Sat=6, Sun=0)
-      let weekendDays = 0, currentDay = new Date(checkinDt);
-      for (let i = 0; i < billedDays; i++) {
-        const dow = currentDay.getDay();
-        if (dow === 0 || dow === 6) weekendDays++;
-        currentDay.setDate(currentDay.getDate() + 1);
-      }
-      const weekdayDays = billedDays - weekendDays;
-      const subtotal = weekdayDays * ratePerDay + weekendDays * ratePerDay * weekendMultiplier;
-      
-      // FIX: Surcharge logic - only if extra hours exceed grace period on full days
-      let surcharge = 0;
-      if (fullDays >= 1 && rem > graceHours) {
-        // Extra hours beyond grace period warrant a surcharge
-        if (surchType === 'fixed') {
-          surcharge = surchAmount;
-        } else {
-          surcharge = ratePerDay * surchPct / 100;
-        }
-      }
-      
-      return {
-        fullDays,
-        extraHrs: Math.round(rem),
-        billedDays,
-        weekendDays,
-        weekdayDays,
-        subtotal,
-        surcharge,
-        total: subtotal + surcharge,
-        rate: ratePerDay,
-        weekendRate: ratePerDay * weekendMultiplier
-      };
-    }
+  <div class="card">
+    <div class="ct">Service</div>
+    <div class="seg">
+      <button type="button" class="on" id="seg-b" onclick="setSvc('boarding')">🏡 Boarding</button>
+      <button type="button" id="seg-d" onclick="setSvc('daycare')">☀️ Day Care</button>
+    </div>
 
-    function getSettings() {
-      const disc = parseFloat(document.getElementById('group-discount').value) || 0;
-      return {
-        rateBoarding: parseFloat(document.getElementById('rate-b').value) || 75,
-        rateDaycare: parseFloat(document.getElementById('rate-d').value) || 45,
-        graceHours: parseFloat(document.getElementById('grace').value) || 3,
-        surchType: document.getElementById('stype').value || 'fixed',
-        surchAmount: parseFloat(document.getElementById('surch').value) || 25,
-        surchPct: parseFloat(document.getElementById('surch-pct').value) || 50,
-        weekendMult: parseFloat(document.getElementById('weekend-mult').value) || 1.15,
-        numDogs: 1,
-        groupDiscount: 0
-      };
-    }
+    <div class="ct">Number of Dogs</div>
+    <div class="fd">
+      <input type="number" id="num-dogs" min="1" max="10" value="1" oninput="recalc()">
+    </div>
 
-    function calculate() {
-      const svc = document.getElementById('svc').value;
-      const ciStr = document.getElementById('ci').value;
-      const citStr = document.getElementById('cit').value;
-      const coStr = document.getElementById('co').value;
-      const cotStr = document.getElementById('cot').value;
+    <div class="ct" id="dates-title">Check-In &amp; Check-Out</div>
+    <div class="g2">
+      <div class="fd"><label>Check-In Date</label><input type="date" id="ci-d" oninput="recalc()"></div>
+      <div class="fd"><label>Check-In Time</label><input type="time" id="ci-t" value="10:00" oninput="recalc()"></div>
+    </div>
+    <div class="g2">
+      <div class="fd"><label>Check-Out Date</label><input type="date" id="co-d" oninput="recalc()"></div>
+      <div class="fd"><label>Check-Out Time</label><input type="time" id="co-t" value="10:00" oninput="recalc()"></div>
+    </div>
 
-      if (!ciStr || !coStr) {
-        alert('Please enter check-in and check-out dates');
-        return;
-      }
+    <div id="result-area"></div>
+  </div>
 
-      const inDt = new Date(ciStr + 'T' + citStr);
-      const outDt = new Date(coStr + 'T' + cotStr);
+  <div class="cta-band">
+    <h2>Like what you see?</h2>
+    <p>New clients start with a free meet &amp; greet so we can get to know your pup.</p>
+    <a href="book.html">Schedule a Meet &amp; Greet</a>
+  </div>
+</div>
 
-      if (outDt <= inDt) {
-        alert('Check-out must be after check-in');
-        return;
-      }
+<script>
+/* ── Public pricing config (display only — final price set at check-out) ── */
+var RATES = { boarding: 55, daycare: 35 };
+var THRESHOLD_HRS = 3;     // extra hours beyond a full day before surcharge
+var SURCHARGE_PCT = 50;    // % of daily rate added when over threshold
+var svc = 'boarding';
 
-      const s = getSettings();
-      const rate = svc === 'boarding' ? s.rateBoarding : s.rateDaycare;
-      const calc = calcStay(rate, inDt, outDt, s.graceHours, s.surchType, s.surchAmount, s.surchPct, s.weekendMult);
+function setSvc(s){
+  svc = s;
+  document.getElementById('seg-b').classList.toggle('on', s==='boarding');
+  document.getElementById('seg-d').classList.toggle('on', s==='daycare');
+  document.getElementById('dates-title').textContent = s==='daycare' ? 'Day Care Date & Times' : 'Check-In & Check-Out';
+  recalc();
+}
 
-      const prev = document.getElementById('prev');
-      const res = document.getElementById('res');
-      const resContent = document.getElementById('res-content');
+function getTimes(){
+  var ci=document.getElementById('ci-d').value, ct=document.getElementById('ci-t').value;
+  var co=document.getElementById('co-d').value, ot=document.getElementById('co-t').value;
+  if(!ci||!ct||!co||!ot) return null;
+  var i=new Date(ci+'T'+ct), o=new Date(co+'T'+ot);
+  if(isNaN(i)||isNaN(o)||o<=i) return null;
+  return {i:i,o:o};
+}
 
-      prev.style.display = 'none';
-      res.style.display = 'block';
+function calcOne(i,o){
+  var rate = svc==='boarding' ? RATES.boarding : RATES.daycare;
+  var hrs = (o-i)/3600000;
+  if(svc==='daycare'){
+    var days=Math.max(1,Math.ceil(hrs/24));
+    return {rate:rate, fullDays:days, extraHrs:0, surcharge:0, total:+(rate*days).toFixed(2)};
+  }
+  var full=Math.floor(hrs/24), rem=hrs-full*24;
+  // FIXED: Only apply surcharge if full>=1 AND rem>threshold
+  var sur = (full>=1 && rem>THRESHOLD_HRS) ? +(rate*SURCHARGE_PCT/100).toFixed(2) : 0;
+  var total = +((full===0&&rem>0 ? rate : rate*full)+sur).toFixed(2);
+  return {rate:rate, fullDays:full, extraHrs:+rem.toFixed(2), surcharge:sur, total:total};
+}
 
-      let html = `<div class="result-line"><span>Duration</span><span>${calc.billedDays}d${calc.extraHrs > 0 ? ' + ' + calc.extraHrs + 'h' : ''}</span></div>`;
-      
-      if (svc === 'boarding') {
-        html += `<div class="result-line"><span>Weekdays</span><span>${calc.weekdayDays}d @ $${rate.toFixed(2)}</span></div>`;
-        if (calc.weekendDays > 0) html += `<div class="result-line"><span>Weekends</span><span>${calc.weekendDays}d @ $${calc.weekendRate.toFixed(2)}</span></div>`;
-      }
+function recalc(){
+  var ra=document.getElementById('result-area');
+  var times=getTimes();
+  var num=parseInt(document.getElementById('num-dogs').value)||0;
+  if(!times||num<1){
+    ra.innerHTML='<div class="empty"><span class="ei">🧮</span><p>Enter dates to see your estimate</p></div>';
+    return;
+  }
+  var one=calcOne(times.i,times.o);
+  var grand=+(one.total*num).toFixed(2);
+  var fd=function(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});};
+  var durLabel = one.fullDays+(svc==='boarding'?' night':' day')+(one.fullDays!==1?'s':'')+(one.extraHrs>0?' + '+one.extraHrs+'h':'');
+  ra.innerHTML =
+    '<div class="result">'+
+      '<div class="rline"><span>'+(svc==='boarding'?'🏡 Boarding':'☀️ Day Care')+' rate</span><span class="v">$'+one.rate.toFixed(2)+(svc==='boarding'?' / night':' / day')+'</span></div>'+
+      '<div class="rline"><span>Duration</span><span class="v">'+durLabel+'</span></div>'+
+      (one.surcharge>0?'<div class="rline"><span>Late check-out surcharge (per dog)</span><span class="v">+$'+one.surcharge.toFixed(2)+'</span></div>':'')+
+      '<div class="rline"><span>Per dog</span><span class="v">$'+one.total.toFixed(2)+'</span></div>'+
+      (num>1?'<div class="rline"><span>Number of dogs</span><span class="v">× '+num+'</span></div>':'')+
+      '<div class="gtotal"><span class="lbl">Estimated total</span><span class="amt">$'+grand.toFixed(2)+'</span></div>'+
+      '<div class="est-note">'+fd(times.i)+' → '+fd(times.o)+'<br>This is an estimate. The final price is confirmed at check-out based on actual drop-off and pick-up times.</div>'+
+    '</div>';
+}
 
-      html += `<div class="result-line"><span>Base cost</span><span>$${calc.subtotal.toFixed(2)}</span></div>`;
-
-      // FIX: Show surcharge clearly
-      if (calc.surcharge > 0) {
-        const lbl = s.surchType === 'fixed' ? 'Late checkout fee' : s.surchPct + '% surcharge';
-        html += `<div class="result-line"><span>${lbl}</span><span style="color:var(--brown-dark);font-weight:600;">+$${calc.surcharge.toFixed(2)}</span></div>`;
-      } else if (calc.fullDays >= 1 && calc.extraHrs > 0) {
-        html += `<div class="result-line"><span>Extra hours (within grace period)</span><span style="color:var(--ink-faint);">No charge (${calc.extraHrs}h ≤ ${s.graceHours}h grace)</span></div>`;
-      }
-
-      html += `<div class="result-line total"><span>Total</span><span>$${calc.total.toFixed(2)}</span></div>`;
-
-      resContent.innerHTML = html;
-    }
-
-    // Handle surcharge type toggle
-    document.getElementById('stype').addEventListener('change', function() {
-      const isFixed = this.value === 'fixed';
-      document.getElementById('surch-fixed-wrap').style.display = isFixed ? '' : 'none';
-      document.getElementById('surch-pct-wrap').style.display = isFixed ? 'none' : '';
-    });
-
-    // Auto-calculate on any input change
-    ['ci', 'cit', 'co', 'cot', 'rate-b', 'rate-d', 'grace', 'stype', 'surch', 'surch-pct', 'weekend-mult', 'svc'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.addEventListener('change', calculate);
-        el.addEventListener('input', calculate);
-      }
-    });
-
-    // Set today as default
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('ci').value = today;
-    document.getElementById('co').value = today;
-  </script>
+// init
+recalc();
+</script>
 </body>
 </html>

@@ -24,7 +24,11 @@ function calcDog(dog, i, o) {
     return {rate, fullDays:days, extraHrs:0, surcharge:0, total:+(rate*days).toFixed(2), hrs:+hrs.toFixed(2)};
   }
   const full=Math.floor(hrs/24), rem=hrs-full*24;
-  const sur = rem>s.threshold ? +(rate*s.surchargePct/100).toFixed(2) : 0;
+  // FIXED: Only apply surcharge if full>=1 AND rem>threshold, and respect surchargeType
+  let sur=0;
+  if(full>=1 && rem>s.threshold) {
+    sur = s.surchargeType==='fixed' ? +(s.surchargeAmt||0).toFixed(2) : +(rate*s.surchargePct/100).toFixed(2);
+  }
   const total = +((full===0&&rem>0 ? rate : rate*full)+sur).toFixed(2);
   return {rate, fullDays:full, extraHrs:+rem.toFixed(2), surcharge:sur, total, hrs:+hrs.toFixed(2)};
 }
@@ -38,7 +42,11 @@ function calcDogSvc(dog, i, o, service) {
     return {rate, fullDays:days, extraHrs:0, surcharge:0, total:+(rate*days).toFixed(2), hrs:+hrs.toFixed(2)};
   }
   const full=Math.floor(hrs/24), rem=hrs-full*24;
-  const sur = rem>s.threshold ? +(rate*s.surchargePct/100).toFixed(2) : 0;
+  // FIXED: Only apply surcharge if full>=1 AND rem>threshold, and respect surchargeType
+  let sur=0;
+  if(full>=1 && rem>s.threshold) {
+    sur = s.surchargeType==='fixed' ? +(s.surchargeAmt||0).toFixed(2) : +(rate*s.surchargePct/100).toFixed(2);
+  }
   const total = +((full===0&&rem>0 ? rate : rate*full)+sur).toFixed(2);
   return {rate, fullDays:full, extraHrs:+rem.toFixed(2), surcharge:sur, total, hrs:+hrs.toFixed(2)};
 }
