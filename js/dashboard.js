@@ -4,9 +4,6 @@
 function sameDay(a,b){ return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
 function onSiteReservations(){ return requests.filter(r=>r.status==='checked_in'); }
 function renderDashboard(){
-  // Initialize enhancements (surcharge settings, calendar interactions, etc.)
-  initAllEnhancements();
-  
   const now=new Date(), todayStr=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   const hr=now.getHours();
   const greet=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
@@ -103,9 +100,9 @@ function renderDashboard(){
     `<div class="card" style="margin:0"><div class="ct" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>Vaccination Watch</div>${vaccHtml}</div>`+
     `<div class="card" style="margin:0"><div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Recent Activity</div>${actHtml}</div>`;
   
-  // NEW: Render enhancements
-  renderDashEnhancements();
-  renderTrendMetrics();
+  // Render three features
+  if(typeof renderCurrentlyBoarding === 'function') renderCurrentlyBoarding();
+  if(typeof renderDayNavigation === 'function') renderDayNavigation();
 }
 
 /* ── Right panel ──────────────────────────────────────────── */
@@ -149,264 +146,188 @@ function renderRightPanel() {
       }).join('')
     : '<div class="rp-empty">Nothing in next 3 days</div>';
 }
-// BUG FIX: All 7 Issues
+/* ═══════════════════════════════════════
+   THREE WORKING FEATURES
+═══════════════════════════════════════ */
 
-// 1. QUICK LOG - Handle checked-out dogs properly
+// FEATURE 1: Currently Boarding Dogs
 function renderCurrentlyBoarding(){
-  const now=new Date();
+  const now = new Date();
+  const cb = document.getElementById('dash-currently-boarding');
+  if(!cb) return;
   
-  // Only show dogs that are CURRENTLY in stay (not yet checked out)
-  const current=requests.filter(r=>{
-    const ci=new Date(r.actual_checkin||r.checkin);
-    const co=new Date(r.checkout);
-    return r.status==='checked_in' && ci<=now && co>=now;
+  // Get dogs that are checked_in and haven't checked out yet
+  const current = requests.filter(r => {
+    if(r.status !== 'checked_in') return false;
+    const ci = new Date(r.actual_checkin || r.checkin);
+    const co = new Date(r.checkout);
+    return ci <= now && co >= now;
   });
   
-  if(current.length===0){
-    const div=document.getElementById('dash-currently-boarding');
-    if(div) div.innerHTML='<div class="card"><div class="es"><span class="ei">🏠</span><p>No dogs currently boarding</p></div></div>';
+  if(current.length === 0){
+    cb.innerHTML = `<div class="card"><div class="es"><span class="ei">🏠</span><p>No dogs currently boarding</p></div></div>`;
     return;
   }
   
-  const html=current.map(r=>{
-    const coTime=new Date(r.checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    const coDate=new Date(r.checkout).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    return `
-      <div style="display:flex;align-items:center;gap:11px;padding:11px;background:var(--cream-mid);border-radius:var(--radius-md);margin-bottom:8px">
+  let html = '<div class="card"><div class="ct">🏠 Currently Boarding</div>';
+  current.forEach(r => {
+    const coDate = new Date(r.checkout).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    const coTime = new Date(r.checkout).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+    html += `
+      <div style="display:flex;align-items:center;gap:11px;padding:11px;background:var(--cream-mid);border-radius:8px;margin-bottom:8px">
         <div style="font-size:18px">${r.service==='boarding'?'🏡':'☀️'}</div>
         <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:var(--ink)">${r.dog_name}</div>
+          <div style="font-size:13px;font-weight:600">${r.dog_name}</div>
           <div style="font-size:11px;color:var(--ink-faint)">Checks out ${coDate} at ${coTime}</div>
         </div>
-        <button class="btn btn-p sm" onclick="if(confirm('Log check-in for ${r.dog_name}?')) quickCheckin('${r.id}')" style="font-size:12px">✓ Log</button>
+        <button class="btn btn-p sm" onclick="quickCheckIn('${r.id}')" style="font-size:11px">✓ Log</button>
       </div>
     `;
-  }).join('');
-  
-  const cardHtml=`<div class="card" style="margin-bottom:14px"><div class="ct">🏠 Currently Boarding</div>${html}</div>`;
-  const div=document.getElementById('dash-currently-boarding');
-  if(div) div.innerHTML=cardHtml;
+  });
+  html += '</div>';
+  cb.innerHTML = html;
 }
 
-function quickCheckin(requestId){
-  const req=requests.find(r=>r.id===requestId);
-  if(!req){ toast('Request not found',true); return; }
-  if(req.status!=='checked_in'){ toast('Dog not currently checked in',true); return; }
+function quickCheckIn(requestId){
+  const req = requests.find(r => r.id === requestId);
+  if(!req) { alert('Request not found'); return; }
   
-  const now=new Date().toISOString();
-  req.actual_checkin=now;
+  if(!confirm(`Log check-in for ${req.dog_name}?`)) return;
   
-  // Use updateRequest from core if available, else fallback
-  if(typeof updateRequest==='function'){
-    updateRequest(req);
-  } else if(typeof dbUpdReq==='function'){
-    dbUpdReq(req.id,{actual_checkin:now});
+  const now = new Date().toISOString();
+  req.actual_checkin = now;
+  
+  // Update in database
+  if(typeof dbUpdReq === 'function'){
+    dbUpdReq(req.id, {actual_checkin: now});
   }
   
-  toast(`✓ Logged check-in for ${req.dog_name}`);
-  renderDashEnhancements();
+  alert(`✓ Checked in ${req.dog_name} at ${new Date(now).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`);
+  renderCurrentlyBoarding();
 }
 
-// 2. DAY NAV - Include currently boarding + upcoming
-function renderUpcomingByDay(){
-  const dayStart=new Date(currentBrowseDate);
-  dayStart.setHours(0,0,0,0);
-  const dayEnd=new Date(currentBrowseDate);
-  dayEnd.setHours(23,59,59,999);
-  const now=new Date();
-  
-  // Get currently boarding dogs that overlap this day
-  const currentlyBoarding=requests.filter(r=>{
-    const ci=new Date(r.actual_checkin||r.checkin);
-    const co=new Date(r.checkout);
-    return r.status==='checked_in' && ci<=dayEnd && co>=dayStart;
-  });
-  
-  // Get upcoming check-ins for this day
-  const checkInsToday=requests.filter(r=>{
-    const ci=new Date(r.checkin);
-    return r.status==='confirmed' && ci>=dayStart && ci<=dayEnd;
-  });
-  
-  const allForDay=[...currentlyBoarding,...checkInsToday].sort((a,b)=>new Date(a.checkin)-new Date(b.checkin));
-  
-  const dateStr=currentBrowseDate.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
-  const isToday=currentBrowseDate.toISOString().split('T')[0]===new Date().toISOString().split('T')[0];
-  
-  const dayHtml=`<div class="card">
-    <div class="ct" style="display:flex;align-items:center;justify-content:space-between;width:100%">
-      <span>📅 ${dateStr}${isToday?' (Today)':''}</span>
-      <div style="display:flex;gap:6px">
-        <button class="btn btn-o sm" onclick="browsePrevDay()">←</button>
-        <button class="btn btn-o sm" onclick="setBrowseToday()">Today</button>
-        <button class="btn btn-o sm" onclick="browseNextDay()">→</button>
-      </div>
-    </div>
-    ${allForDay.length===0?'<div class="es" style="padding:14px"><span class="ei">📅</span><p>No dogs for this day</p></div>':
-      allForDay.map(r=>{
-        const isCurrently=r.status==='checked_in';
-        const ciTime=new Date(r.actual_checkin||r.checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-        return `<div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--cream-mid)">
-          <div style="font-size:16px">${r.service==='boarding'?'🏡':'☀️'}</div>
-          <div style="flex:1">
-            <div style="font-size:13px;font-weight:600;color:var(--ink)">${r.dog_name}</div>
-            <div style="font-size:11px;color:var(--ink-faint)">${isCurrently?'Currently boarding':'Check-in'}: ${ciTime}</div>
-          </div>
-          <button class="btn btn-p sm" onclick="openReq('${r.id}')" style="font-size:12px">Details</button>
-        </div>`;
-      }).join('')
-    }
-  </div>`;
-  
-  const dnDiv=document.getElementById('dash-day-nav');
-  if(dnDiv) dnDiv.innerHTML=dayHtml;
-}
-
-// 3. HOME PAGE - Already filled in HTML, just ensure navigation works
-// (This is an HTML/routing issue - home.html should display normally)
-
-// 4. SURCHARGE SETTINGS - Initialize DEF properly
-function initSurchargeDefaults(){
-  if(!window.DEF) window.DEF={};
-  
-  // Set defaults if not already set
-  if(!DEF.surchargeType) DEF.surchargeType='percent';
-  if(DEF.surchargePct===undefined) DEF.surchargePct=25;
-  if(DEF.surchargeAmt===undefined) DEF.surchargeAmt=15;
-  if(!DEF.threshold) DEF.threshold=2;
-}
-
+// FEATURE 2: Surcharge Settings - PROPER RADIO BUTTONS
 function renderSurchargeSettings(){
-  initSurchargeDefaults();
+  const s = settings || {};
+  const sType = s.surchargeType || 'percent';
+  const sPct = s.surchargePct || 25;
+  const sAmt = s.surchargeAmt || 15;
   
-  const html=`
-    <div class="fd">
-      <label>Surcharge Type</label>
-      <div style="display:flex;gap:8px">
-        <label style="display:flex;align-items:center;gap:6px;flex:1;padding:9px;background:var(--cream-mid);border-radius:var(--radius-md);cursor:pointer">
-          <input type="radio" name="surch-type" value="percent" ${DEF.surchargeType==='percent'?'checked':''} onchange="updateSurchargeType('percent')">
-          <span>Percentage (%)</span>
+  const html = `
+    <div style="margin-top:14px">
+      <label style="display:block;margin-bottom:10px;font-weight:600">Surcharge Type</label>
+      <div style="display:flex;gap:12px;margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--cream-mid);border-radius:8px;cursor:pointer;flex:1">
+          <input type="radio" name="surcharge-type" value="percent" ${sType==='percent'?'checked':''} onchange="changeSurchargeType('percent')">
+          <span style="font-weight:500">Percentage (%)</span>
         </label>
-        <label style="display:flex;align-items:center;gap:6px;flex:1;padding:9px;background:var(--cream-mid);border-radius:var(--radius-md);cursor:pointer">
-          <input type="radio" name="surch-type" value="fixed" ${DEF.surchargeType==='fixed'?'checked':''} onchange="updateSurchargeType('fixed')">
-          <span>Fixed Amount ($)</span>
+        <label style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--cream-mid);border-radius:8px;cursor:pointer;flex:1">
+          <input type="radio" name="surcharge-type" value="fixed" ${sType==='fixed'?'checked':''} onchange="changeSurchargeType('fixed')">
+          <span style="font-weight:500">Fixed Amount ($)</span>
         </label>
       </div>
-    </div>
-    <div class="fd">
-      <label>${DEF.surchargeType==='percent'?'Surcharge Percentage (%)':'Surcharge Amount ($)'}</label>
-      <input type="number" id="surch-val" value="${DEF.surchargeType==='percent'?DEF.surchargePct:DEF.surchargeAmt}" placeholder="0" oninput="updateSurchargeValue(this.value)" ${DEF.surchargeType==='percent'?'step="1"':'step="0.01"'} min="0" style="max-width:200px">
-      <small style="color:var(--ink-faint)">${DEF.surchargeType==='percent'?'% of daily rate':'$ amount'}</small>
+      
+      <label style="display:block;margin-bottom:6px;font-weight:500">
+        ${sType==='percent'?'Surcharge %':'Surcharge Amount ($)'}
+      </label>
+      <input type="number" id="surcharge-val" value="${sType==='percent'?sPct:sAmt}" 
+        ${sType==='percent'?'step="1"':'step="0.01"'} min="0" style="width:120px;padding:8px;border:1px solid var(--cream-dark);border-radius:6px"
+        onchange="updateSurchargeValue(this.value)">
+      <small style="display:block;margin-top:6px;color:var(--ink-faint)">${sType==='percent'?'% of daily rate':'$ per surcharge'}</small>
     </div>
   `;
   
-  const settingsDiv=document.getElementById('settings-surcharge');
-  if(settingsDiv) settingsDiv.innerHTML=html;
+  const settingsDiv = document.getElementById('settings-surcharge');
+  if(settingsDiv) settingsDiv.innerHTML = html;
 }
 
-function updateSurchargeType(type){
-  DEF.surchargeType=type;
-  if(typeof dbUpdSet==='function') dbUpdSet({surchargeType:type});
+function changeSurchargeType(type){
+  settings.surchargeType = type;
+  if(typeof dbUpdSet === 'function'){
+    dbUpdSet({surchargeType: type});
+  }
   renderSurchargeSettings();
 }
 
 function updateSurchargeValue(val){
-  const num=parseFloat(val)||0;
-  const key=DEF.surchargeType==='percent'?'surchargePct':'surchargeAmt';
-  DEF[key]=num;
-  if(typeof dbUpdSet==='function') dbUpdSet({[key]:num});
+  const num = parseFloat(val) || 0;
+  const key = settings.surchargeType === 'percent' ? 'surchargePct' : 'surchargeAmt';
+  settings[key] = num;
+  if(typeof dbUpdSet === 'function'){
+    dbUpdSet({[key]: num});
+  }
 }
 
-// 5 & 6. CALENDAR - Make dogs clickable + wire up date clicks
-function wireUpCalendarInteractions(){
-  // Make dog names clickable
-  document.querySelectorAll('[data-dog-id]').forEach(el=>{
-    el.style.cursor='pointer';
-    el.style.textDecoration='underline';
-    el.onclick=function(e){
-      e.stopPropagation();
-      const dogId=el.getAttribute('data-dog-id');
-      if(dogId && typeof openDog==='function') openDog(dogId);
-    };
-  });
-  
-  // Make calendar dates clickable for modal
-  document.querySelectorAll('.cal-day').forEach(el=>{
-    const dateStr=el.getAttribute('data-date');
-    if(dateStr){
-      el.style.cursor='pointer';
-      el.onclick=function(e){
-        if(e.target.hasAttribute('data-dog-id')) return; // Don't interfere with dog clicks
-        showDayModal(dateStr);
-      };
-    }
-  });
-}
+// FEATURE 3: Day Navigation
+let browseDate = new Date();
 
-// 7. DAY MODAL - Properly show modal with all info
-function showDayModal(dateStr){
-  const date=new Date(dateStr+'T12:00:00');
-  const dayStart=new Date(date);
+function renderDayNavigation(){
+  const dayStart = new Date(browseDate);
   dayStart.setHours(0,0,0,0);
-  const dayEnd=new Date(date);
+  const dayEnd = new Date(browseDate);
   dayEnd.setHours(23,59,59,999);
-  const now=new Date();
+  const now = new Date();
   
-  // Get currently boarding dogs that overlap this day
-  const currentlyBoarding=requests.filter(r=>{
-    const ci=new Date(r.actual_checkin||r.checkin);
-    const co=new Date(r.checkout);
-    return r.status==='checked_in' && ci<=dayEnd && co>=dayStart;
-  });
+  // Get all requests (upcoming + currently there) for this day
+  const dayRequests = requests.filter(r => {
+    const ci = new Date(r.checkin);
+    const co = new Date(r.checkout);
+    // Overlaps with this day
+    return (ci <= dayEnd && co >= dayStart);
+  }).sort((a,b) => new Date(a.checkin) - new Date(b.checkin));
   
-  // Get check-ins scheduled for this day
-  const checkIns=requests.filter(r=>{
-    const ci=new Date(r.checkin);
-    return r.status==='confirmed' && ci>=dayStart && ci<=dayEnd;
-  });
+  const dateStr = browseDate.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+  const isToday = browseDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
   
-  const allForDay=[...currentlyBoarding,...checkIns].sort((a,b)=>new Date(a.checkin)-new Date(b.checkin));
-  
-  const modal=`
-    <div class="modal" id="day-modal" onclick="if(event.target.id==='day-modal') closeDayModal()" style="display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;z-index:9999">
-      <div class="card" style="max-width:500px;max-height:80vh;overflow-y:auto;width:90%">
-        <div class="ct" style="margin-bottom:14px">📅 ${date.toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric'})}</div>
-        ${allForDay.length===0?'<div class="es"><p>No check-ins scheduled for this day</p></div>':allForDay.map(r=>`
-          <div style="padding:11px;background:var(--cream-mid);border-radius:var(--radius-md);margin-bottom:8px">
-            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px">
-              <div style="font-weight:600;color:var(--ink)">${r.dog_name}</div>
-              <span style="background:var(--brown);color:white;font-size:10px;padding:2px 8px;border-radius:4px">${r.service==='boarding'?'Boarding':'Day Care'}</span>
-            </div>
-            <div style="font-size:12px;color:var(--ink-faint);margin-bottom:8px">
-              ${r.status==='checked_in'?'Currently boarding':'Check-in'}: ${new Date(r.actual_checkin||r.checkin).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}
-            </div>
-            <div style="display:flex;gap:6px">
-              <button class="btn btn-p sm" onclick="openReq('${r.id}'); closeDayModal()" style="font-size:11px;flex:1">Open Request</button>
-              ${r.status==='checked_in'?'':'<button class="btn btn-b sm" onclick="openCheckIn(\''+r.id+'\'); closeDayModal()" style="font-size:11px;flex:1">Check In</button>'}
-            </div>
-          </div>
-        `).join('')}
-        <button class="btn btn-o" style="width:100%;margin-top:14px" onclick="closeDayModal()">Close</button>
+  let html = `
+    <div class="card">
+      <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
+        <span>📅 ${dateStr}${isToday?' (Today)':''}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-o sm" onclick="prevDay()" style="padding:6px 12px">← Prev</button>
+          <button class="btn btn-o sm" onclick="todayDay()" style="padding:6px 12px">Today</button>
+          <button class="btn btn-o sm" onclick="nextDay()" style="padding:6px 12px">Next →</button>
+        </div>
       </div>
-    </div>
   `;
   
-  const existing=document.getElementById('day-modal');
-  if(existing) existing.remove();
-  const div=document.createElement('div');
-  div.innerHTML=modal;
-  document.body.appendChild(div.firstElementChild);
+  if(dayRequests.length === 0){
+    html += '<div style="padding:14px;text-align:center;color:var(--ink-faint)">No dogs for this day</div>';
+  } else {
+    dayRequests.forEach(r => {
+      const ciTime = new Date(r.checkin).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+      const status = r.status === 'checked_in' ? 'Currently here' : 'Arriving';
+      html += `
+        <div style="padding:11px;border-bottom:1px solid var(--cream-mid);display:flex;align-items:center;gap:10px">
+          <div style="font-size:16px">${r.service==='boarding'?'🏡':'☀️'}</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:13px">${r.dog_name}</div>
+            <div style="font-size:11px;color:var(--ink-faint)">${status} at ${ciTime}</div>
+          </div>
+          <button class="btn btn-p sm" onclick="openReq('${r.id}')" style="font-size:11px">Open</button>
+        </div>
+      `;
+    });
+  }
+  
+  html += '</div>';
+  
+  const navDiv = document.getElementById('dash-day-nav');
+  if(navDiv) navDiv.innerHTML = html;
 }
 
-function closeDayModal(){
-  const modal=document.getElementById('day-modal');
-  if(modal) modal.remove();
+function prevDay(){
+  browseDate.setDate(browseDate.getDate() - 1);
+  renderDayNavigation();
 }
 
-// CALL THIS on dashboard render
-function initAllEnhancements(){
-  initSurchargeDefaults();
-  renderSurchargeSettings();
-  wireUpCalendarInteractions();
+function nextDay(){
+  browseDate.setDate(browseDate.getDate() + 1);
+  renderDayNavigation();
+}
+
+function todayDay(){
+  browseDate = new Date();
+  renderDayNavigation();
 }
 
