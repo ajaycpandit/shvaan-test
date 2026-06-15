@@ -15,7 +15,7 @@ function buildInv(b) {
   const rows=entries.map(e=>{
     const dl=b.service==='boarding'?`${e.fullDays}d${e.extraHrs>0?' + '+e.extraHrs+'h':''}`:`${e.fullDays}d`;
     const sr=e.surcharge>0?`<tr><td style="padding-left:10px;color:var(--ink-faint);font-size:10px">↳ Late checkout (${s.surchargePct}%)</td><td colspan="2"></td><td style="text-align:right;color:var(--ink-faint);font-size:10px">$${parseFloat(e.surcharge).toFixed(2)}</td></tr>`:'';
-    return `<tr><td><strong>${esc(e.dogName||'')}</strong></td><td>$${parseFloat(e.rate).toFixed(2)}/24hrs</td><td>${dl}</td><td>$${(parseFloat(e.total)-parseFloat(e.surcharge)).toFixed(2)}</td></tr>${sr}`;
+    return `<tr><td><strong>${esc(e.dogName||'')}</strong></td><td>$${parseFloat(e.rate).toFixed(2)}/day</td><td>${dl}</td><td>$${(parseFloat(e.total)-parseFloat(e.surcharge)).toFixed(2)}</td></tr>${sr}`;
   }).join('');
   return `
     <div class="iheader">

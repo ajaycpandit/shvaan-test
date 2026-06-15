@@ -5,9 +5,6 @@ function renderSettings() {
   const s=settings;
   document.getElementById('s-br').value=s.boardingRate; document.getElementById('s-dc').value=s.daycareRate;
   document.getElementById('s-th').value=s.threshold; document.getElementById('s-pc').value=s.surchargePct;
-  document.getElementById('s-sc-type').value=s.surchargeType||'percent';
-  document.getElementById('s-sa').value=s.surchargeAmt||25;
-  toggleSurchargeFields();
   document.getElementById('s-bn').value=s.bizName||''; document.getElementById('s-bp').value=s.bizPhone||'';
   document.getElementById('s-be').value=s.bizEmail||''; document.getElementById('s-ba').value=s.bizAddr||'';
   document.getElementById('s-cap').value=s.capacity||12;
@@ -148,20 +145,12 @@ function updateScPrev() {
 }
 ['s-th','s-pc','s-br'].forEach(id=>document.getElementById(id).addEventListener('input',updateScPrev));
 
-function toggleSurchargeFields() {
-  const t = document.getElementById('s-sc-type').value;
-  document.getElementById('s-pc-wrap').style.display = t==='percent' ? '' : 'none';
-  document.getElementById('s-sa-wrap').style.display = t==='fixed' ? '' : 'none';
-}
-
 async function saveSettings() {
   settings={
     boardingRate:parseFloat(document.getElementById('s-br').value)||DEF.boardingRate,
     daycareRate:parseFloat(document.getElementById('s-dc').value)||DEF.daycareRate,
     threshold:parseFloat(document.getElementById('s-th').value)||DEF.threshold,
     surchargePct:parseFloat(document.getElementById('s-pc').value)||DEF.surchargePct,
-    surchargeType:document.getElementById('s-sc-type').value||'percent',
-    surchargeAmt:parseFloat(document.getElementById('s-sa').value)||DEF.surchargeAmt,
     bizName:document.getElementById('s-bn').value.trim()||DEF.bizName,
     bizPhone:document.getElementById('s-bp').value.trim(),
     bizEmail:document.getElementById('s-be').value.trim(),

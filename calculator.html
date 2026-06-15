@@ -109,10 +109,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);l
 <script>
 /* ── Public pricing config (display only — final price set at check-out) ── */
 var RATES = { boarding: 55, daycare: 35 };
-var THRESHOLD_HRS = 3;     // extra hours beyond a full 24-hr day before surcharge
-var SURCHARGE_TYPE = 'percent'; // 'percent' or 'fixed'
+var THRESHOLD_HRS = 3;     // extra hours beyond a full day before surcharge
 var SURCHARGE_PCT = 50;    // % of daily rate added when over threshold
-var SURCHARGE_AMT = 25;    // fixed $ amount added when over threshold
 var svc = 'boarding';
 
 function setSvc(s){
@@ -140,7 +138,7 @@ function calcOne(i,o){
     return {rate:rate, fullDays:days, extraHrs:0, surcharge:0, total:+(rate*days).toFixed(2)};
   }
   var full=Math.floor(hrs/24), rem=hrs-full*24;
-  var sur = rem>THRESHOLD_HRS ? (SURCHARGE_TYPE==='fixed' ? +SURCHARGE_AMT.toFixed(2) : +(rate*SURCHARGE_PCT/100).toFixed(2)) : 0;
+  var sur = rem>THRESHOLD_HRS ? +(rate*SURCHARGE_PCT/100).toFixed(2) : 0;
   var total = +((full===0&&rem>0 ? rate : rate*full)+sur).toFixed(2);
   return {rate:rate, fullDays:full, extraHrs:+rem.toFixed(2), surcharge:sur, total:total};
 }
@@ -159,7 +157,7 @@ function recalc(){
   var durLabel = one.fullDays+(svc==='boarding'?' night':' day')+(one.fullDays!==1?'s':'')+(one.extraHrs>0?' + '+one.extraHrs+'h':'');
   ra.innerHTML =
     '<div class="result">'+
-      '<div class="rline"><span>'+(svc==='boarding'?'🏡 Boarding':'☀️ Day Care')+' rate</span><span class="v">$'+one.rate.toFixed(2)+(svc==='boarding'?' / 24 hrs':' / day')+'</span></div>'+
+      '<div class="rline"><span>'+(svc==='boarding'?'🏡 Boarding':'☀️ Day Care')+' rate</span><span class="v">$'+one.rate.toFixed(2)+(svc==='boarding'?' / night':' / day')+'</span></div>'+
       '<div class="rline"><span>Duration</span><span class="v">'+durLabel+'</span></div>'+
       (one.surcharge>0?'<div class="rline"><span>Late check-out surcharge (per dog)</span><span class="v">+$'+one.surcharge.toFixed(2)+'</span></div>':'')+
       '<div class="rline"><span>Per dog</span><span class="v">$'+one.total.toFixed(2)+'</span></div>'+

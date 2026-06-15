@@ -24,8 +24,7 @@ function calcDog(dog, i, o) {
     return {rate, fullDays:days, extraHrs:0, surcharge:0, total:+(rate*days).toFixed(2), hrs:+hrs.toFixed(2)};
   }
   const full=Math.floor(hrs/24), rem=hrs-full*24;
-  const surType = s.surchargeType || 'percent';
-  const sur = rem>s.threshold ? (surType==='fixed' ? +(parseFloat(s.surchargeAmt||0)).toFixed(2) : +(rate*s.surchargePct/100).toFixed(2)) : 0;
+  const sur = rem>s.threshold ? +(rate*s.surchargePct/100).toFixed(2) : 0;
   const total = +((full===0&&rem>0 ? rate : rate*full)+sur).toFixed(2);
   return {rate, fullDays:full, extraHrs:+rem.toFixed(2), surcharge:sur, total, hrs:+hrs.toFixed(2)};
 }
@@ -39,8 +38,7 @@ function calcDogSvc(dog, i, o, service) {
     return {rate, fullDays:days, extraHrs:0, surcharge:0, total:+(rate*days).toFixed(2), hrs:+hrs.toFixed(2)};
   }
   const full=Math.floor(hrs/24), rem=hrs-full*24;
-  const surType = s.surchargeType || 'percent';
-  const sur = rem>s.threshold ? (surType==='fixed' ? +(parseFloat(s.surchargeAmt||0)).toFixed(2) : +(rate*s.surchargePct/100).toFixed(2)) : 0;
+  const sur = rem>s.threshold ? +(rate*s.surchargePct/100).toFixed(2) : 0;
   const total = +((full===0&&rem>0 ? rate : rate*full)+sur).toFixed(2);
   return {rate, fullDays:full, extraHrs:+rem.toFixed(2), surcharge:sur, total, hrs:+hrs.toFixed(2)};
 }
@@ -67,7 +65,7 @@ function recalc() {
       <div style="font-size:16px;font-weight:700;color:var(--ink)">$${r.total.toFixed(2)}</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;font-size:11px;color:var(--ink-light)">
-      <div>Rate<span style="display:block;font-size:12px;font-weight:600;color:var(--ink-mid)">$${r.rate.toFixed(2)}/${svc==='boarding'?'24 hrs':'day'}</span></div>
+      <div>Rate<span style="display:block;font-size:12px;font-weight:600;color:var(--ink-mid)">$${r.rate.toFixed(2)}/day</span></div>
       <div>Duration<span style="display:block;font-size:12px;font-weight:600;color:var(--ink-mid)">${r.fullDays}d${r.extraHrs>0?' + '+r.extraHrs+'h':''}</span></div>
       ${r.surcharge>0?`<div>Surcharge<span style="display:block"><span class="bdg bdg-w">+$${r.surcharge.toFixed(2)}</span></span></div>`:''}
     </div>

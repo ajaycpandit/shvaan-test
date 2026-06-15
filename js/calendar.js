@@ -18,9 +18,7 @@ function calEvents(){
     const dog=dogs.find(d=>d.id===r.dog_id), name=dog?dog.dog_name:(r.dog_name||'Unknown');
     const ciSrc=r.actual_checkin||r.checkin;
     const rc=new Date(ciSrc), rcDay=new Date(rc.getFullYear(),rc.getMonth(),rc.getDate());
-    if(r.service==='meet_and_greet'){
-      evts.push({date:dStr(rcDay),type:'meet',label:'🤝 Meet: '+name,detail:r});
-    } else if(r.status==='pending'){
+    if(r.status==='pending'){
       evts.push({date:dStr(rcDay),type:'req',label:'Req: '+name,detail:r});
     } else {
       // confirmed or checked_in: render as full span

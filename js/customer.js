@@ -39,37 +39,6 @@ async function loadCustomerData(){
 function renderCustomerShell(){
   const body=document.getElementById('cust-body');
   const owner=(myProfile&&myProfile.owner_name)||'there';
-
-  // Check if this is a new customer with no dogs — show onboarding
-  if(!custDogs.length){
-    body.innerHTML=`
-    <div style="text-align:center;padding:20px 0 16px">
-      <div style="font-size:48px;margin-bottom:10px">🐾</div>
-      <div style="font-family:'DM Serif Display',serif;font-size:26px;color:var(--ink);margin-bottom:6px">Welcome to Shvaan Pet Care, ${esc(owner)}!</div>
-      <div style="font-size:14px;color:var(--ink-light);max-width:420px;margin:0 auto;line-height:1.6">Let's get your dog set up so we can take great care of them. This only takes a couple of minutes.</div>
-    </div>
-    <div class="card" style="max-width:520px;margin:0 auto">
-      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:14px">Step 1 — Add your dog</div>
-      <div class="g2" style="margin-bottom:11px">
-        <div class="fd"><label>Dog's name *</label><input type="text" id="ob-name" placeholder="e.g. Buddy"></div>
-        <div class="fd"><label>Breed</label><div class="breed-wrap"><input type="text" id="ob-breed" placeholder="Type to search…" autocomplete="off" oninput="filterBreeds(this)" onkeydown="breedKey(event)"><div class="breed-dd" id="breed-dd"></div></div></div>
-      </div>
-      <div class="fd" style="margin-bottom:11px"><label>Notes / Special care</label><textarea id="ob-notes" style="height:52px" placeholder="e.g. Meds at 6pm, loves belly rubs, scared of loud noises"></textarea></div>
-      <div style="border-top:1px solid var(--cream-dark);padding-top:13px;margin-bottom:12px">
-        <div style="font-size:11px;font-weight:600;color:var(--ink-mid);margin-bottom:10px">💉 Vaccination records</div>
-        <div class="g2" style="margin-bottom:11px">
-          <div class="fd"><label>Rabies expiry</label><input type="date" id="ob-v-rabies"></div>
-          <div class="fd"><label>DHPP expiry</label><input type="date" id="ob-v-dhpp"></div>
-          <div class="fd"><label>Bordetella expiry</label><input type="date" id="ob-v-bord"></div>
-        </div>
-      </div>
-      <div id="ob-err" style="color:var(--danger);font-size:13px;margin-bottom:10px;display:none"></div>
-      <button class="btn btn-p" onclick="custOnboardDog()" style="width:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add my dog &amp; get started</button>
-    </div>
-    <div id="cust-tab-body"></div>`;
-    return;
-  }
-
   body.innerHTML=`
     <div style="margin-bottom:18px">
       <div style="font-family:'DM Serif Display',serif;font-size:24px;color:var(--ink)">Welcome, ${esc(owner)}! 🐾</div>
@@ -201,44 +170,4 @@ function renderCustHistory(){
       </div>`).join('')+'</div>';
   } else { html+='<div style="font-size:13px;color:var(--ink-faint)">No past stays yet.</div>'; }
   c.innerHTML=html;
-}
-
-/* ── Customer onboarding — add first dog ── */
-async function custOnboardDog() {
-  const name = document.getElementById('ob-name').value.trim();
-  if (!name) {
-    const err = document.getElementById('ob-err');
-    err.textContent = "Please enter your dog's name.";
-    err.style.display = 'block';
-    return;
-  }
-  const owner = (myProfile && myProfile.owner_name) || '';
-  const rec = {
-    id: Date.now().toString() + Math.random().toString(36).slice(2),
-    dog_name: name,
-    owner_name: owner,
-    breed: document.getElementById('ob-breed').value.trim() || null,
-    notes: document.getElementById('ob-notes').value.trim() || null,
-    vacc_rabies: document.getElementById('ob-v-rabies').value || null,
-    vacc_dhpp: document.getElementById('ob-v-dhpp').value || null,
-    vacc_bordetella: document.getElementById('ob-v-bord').value || null,
-    phone: myProfile.phone || null,
-    owner_email: currentUser ? currentUser.email : null,
-    created_at: new Date().toISOString()
-  };
-  const btn = document.querySelector('#cust-body .btn.btn-p');
-  if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
-  try {
-    await sbFetch('dogs', 'POST', rec);
-    custDogs.push(rec);
-    dogs.push(rec);
-    toast(name + "'s profile created! Welcome to Shvaan Pet Care 🐾");
-    renderCustomerShell();
-    custGo('dogs');
-  } catch (e) {
-    const err = document.getElementById('ob-err');
-    err.textContent = 'Could not save: ' + e.message;
-    err.style.display = 'block';
-    if (btn) { btn.disabled = false; btn.textContent = 'Add my dog & get started'; }
-  }
 }
