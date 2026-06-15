@@ -12,6 +12,7 @@ function renderSettings() {
   updateScPrev();
   if(typeof renderRoleTemplates === 'function') renderRoleTemplates();
   if(typeof updateThemeSettingsRow === 'function') updateThemeSettingsRow();
+  if(typeof renderSurchargeSettings === 'function') renderSurchargeSettings();
   // Team management — admin only
   const tc=document.getElementById('team-card');
   if(tc){ if(isAdmin()){ tc.style.display=''; renderTeamList(); tmRenderPerms(); tmRoleChange(); } else { tc.style.display='none'; } }

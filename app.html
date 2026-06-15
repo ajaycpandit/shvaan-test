@@ -121,7 +121,18 @@
       <div id="pg-dashboard" class="pg active">
         <div class="ph"><h1 id="dash-greeting">Dashboard</h1><p id="dash-summary">Loading today's overview…</p></div>
         <div id="dash-attention"></div>
+        
+        <!-- NEW: Currently Boarding Section -->
+        <div id="dash-currently-boarding"></div>
+        
+        <!-- NEW: Day Navigation Section -->
+        <div id="dash-day-nav"></div>
+        
         <div id="dash-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px"></div>
+        
+        <!-- NEW: Trend Metrics -->
+        <div id="dash-trends"></div>
+        
         <div id="dash-ops" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:0"></div>
         <div class="card">
           <div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Revenue — Last 6 Months</div>
@@ -351,8 +362,9 @@
           <div class="ss"><h3>⏱ Surcharge Rules</h3>
             <div class="g2">
               <div class="fd"><label>Grace Period (hours)</label><input type="number" id="s-th" step="0.5" min="0" max="23"><div class="fh">Hours allowed before surcharge kicks in</div></div>
-              <div class="fd"><label>Surcharge % of daily rate</label><input type="number" id="s-pc" step="1" min="0" max="100"><div class="fh">Added when threshold is exceeded</div></div>
             </div>
+            <!-- NEW: Surcharge Options (% vs Fixed) -->
+            <div id="settings-surcharge"></div>
             <div class="sc-prev" id="sc-prev"></div>
           </div>
           <div class="ss"><h3>🏠 Capacity</h3>
