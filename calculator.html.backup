@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Boarding Cost Calculator — Shvaan Pet Care</title>
+<meta name="description" content="Estimate the cost of boarding or day care for your dog at Shvaan Pet Care in Austin, TX.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cream:#FBF6EF;--cream-mid:#F5ECE0;--cream-dark:#EAD9C6;
+  --brown-dark:#C25E18;--brown:#E07B2E;--brown-light:#F0A868;
+  --ink:#2A211A;--ink-mid:#4F4339;--ink-light:#7E6F61;--ink-faint:#B3A595;
+  --white:#FFF;--danger:#D9534F;--forest:#2E8B82;--forest-pale:#EAF4F3;
+  --gold-pale:#FBF0DD;--r1:6px;--r2:10px;--r3:16px;--r4:20px;
+}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);line-height:1.6;min-height:100vh}
+
+/* top bar */
+.topbar{background:var(--brown-dark);padding:11px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.topbar a.back{color:rgba(255,255,255,.88);font-size:13px;text-decoration:none;display:flex;align-items:center;gap:6px}
+.topbar a.back:hover{color:#fff}
+.topbar a.cta{background:var(--white);color:var(--brown-dark);font-size:13px;font-weight:600;padding:7px 14px;border-radius:var(--r2);text-decoration:none;white-space:nowrap}
+
+.wrap{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+.hero{text-align:center;margin-bottom:28px}
+.hero h1{font-family:'DM Serif Display',serif;font-size:30px;color:var(--ink);margin-bottom:8px}
+.hero p{font-size:15px;color:var(--ink-light);max-width:480px;margin:0 auto}
+
+.card{background:var(--white);border:1px solid var(--cream-dark);border-radius:var(--r4);padding:24px;box-shadow:0 4px 18px rgba(42,33,26,.06);margin-bottom:18px}
+.ct{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:14px}
+
+.seg{display:flex;background:var(--cream-mid);border:1.5px solid var(--cream-dark);border-radius:14px;padding:4px;gap:4px;margin-bottom:18px}
+.seg button{flex:1;padding:12px;border:none;background:none;border-radius:10px;font-size:15px;font-weight:500;color:var(--ink-light);cursor:pointer;font-family:'DM Sans',sans-serif}
+.seg button.on{background:var(--white);color:var(--brown-dark);font-weight:600;box-shadow:0 1px 4px rgba(42,33,26,.1)}
+
+.fd{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.fd label{font-size:12px;font-weight:600;color:var(--ink-mid)}
+.fd input,.fd select{height:48px;padding:0 13px;border:1.5px solid var(--cream-dark);border-radius:10px;background:var(--cream);color:var(--ink);font-size:16px;font-family:'DM Sans',sans-serif;outline:none;width:100%;-webkit-appearance:none}
+.fd input:focus,.fd select:focus{border-color:var(--brown);box-shadow:0 0 0 3px rgba(224,123,46,.13);background:var(--white)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.g2{grid-template-columns:1fr}}
+
+.result{background:var(--cream-mid);border:1.5px solid var(--cream-dark);border-radius:var(--r3);padding:20px;margin-top:6px}
+.rline{display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:14px;color:var(--ink-mid);border-bottom:1px solid var(--cream-dark)}
+.rline:last-of-type{border-bottom:none}
+.rline .v{font-weight:600;color:var(--ink)}
+.gtotal{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:14px;border-top:2px solid var(--cream-dark)}
+.gtotal .lbl{font-size:14px;font-weight:600;color:var(--ink-mid)}
+.gtotal .amt{font-family:'DM Serif Display',serif;font-size:30px;color:var(--brown-dark)}
+.est-note{font-size:12px;color:var(--ink-faint);margin-top:12px;line-height:1.5;text-align:center}
+.empty{text-align:center;padding:30px 20px;color:var(--ink-faint)}
+.empty .ei{font-size:36px;display:block;margin-bottom:8px;opacity:.7}
+
+.cta-band{background:var(--brown-dark);border-radius:var(--r4);padding:26px;text-align:center;color:#fff;margin-top:6px}
+.cta-band h2{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px}
+.cta-band p{font-size:14px;opacity:.9;margin-bottom:16px}
+.cta-band a{background:var(--white);color:var(--brown-dark);font-size:15px;font-weight:600;padding:12px 22px;border-radius:var(--r2);text-decoration:none;display:inline-block}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a class="back" href="index.html">← Back to Shvaan Pet Care</a>
+  <a class="cta" href="book.html">Schedule a Meet &amp; Greet</a>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Boarding Cost Calculator</h1>
+    <p>Get an instant estimate for your dog's stay. No account needed — just enter the dates and we'll show you the price.</p>
+  </div>
+
+  <div class="card">
+    <div class="ct">Service</div>
+    <div class="seg">
+      <button type="button" class="on" id="seg-b" onclick="setSvc('boarding')">🏡 Boarding</button>
+      <button type="button" id="seg-d" onclick="setSvc('daycare')">☀️ Day Care</button>
+    </div>
+
+    <div class="ct">Number of Dogs</div>
+    <div class="fd">
+      <input type="number" id="num-dogs" min="1" max="10" value="1" oninput="recalc()">
+    </div>
+
+    <div class="ct" id="dates-title">Check-In &amp; Check-Out</div>
+    <div class="g2">
+      <div class="fd"><label>Check-In Date</label><input type="date" id="ci-d" oninput="recalc()"></div>
+      <div class="fd"><label>Check-In Time</label><input type="time" id="ci-t" value="10:00" oninput="recalc()"></div>
+    </div>
+    <div class="g2">
+      <div class="fd"><label>Check-Out Date</label><input type="date" id="co-d" oninput="recalc()"></div>
+      <div class="fd"><label>Check-Out Time</label><input type="time" id="co-t" value="10:00" oninput="recalc()"></div>
+    </div>
+
+    <div id="result-area"></div>
+  </div>
+
+  <div class="cta-band">
+    <h2>Like what you see?</h2>
+    <p>New clients start with a free meet &amp; greet so we can get to know your pup.</p>
+    <a href="book.html">Schedule a Meet &amp; Greet</a>
+  </div>
+</div>
+
+<script>
+/* ── Public pricing config (display only — final price set at check-out) ── */
+var RATES = { boarding: 55, daycare: 35 };
+var THRESHOLD_HRS = 3;     // extra hours beyond a full day before surcharge
+var SURCHARGE_PCT = 50;    // % of daily rate added when over threshold
+var svc = 'boarding';
+
+function setSvc(s){
+  svc = s;
+  document.getElementById('seg-b').classList.toggle('on', s==='boarding');
+  document.getElementById('seg-d').classList.toggle('on', s==='daycare');
+  document.getElementById('dates-title').textContent = s==='daycare' ? 'Day Care Date & Times' : 'Check-In & Check-Out';
+  recalc();
+}
+
+function getTimes(){
+  var ci=document.getElementById('ci-d').value, ct=document.getElementById('ci-t').value;
+  var co=document.getElementById('co-d').value, ot=document.getElementById('co-t').value;
+  if(!ci||!ct||!co||!ot) return null;
+  var i=new Date(ci+'T'+ct), o=new Date(co+'T'+ot);
+  if(isNaN(i)||isNaN(o)||o<=i) return null;
+  return {i:i,o:o};
+}
+
+function calcOne(i,o){
+  var rate = svc==='boarding' ? RATES.boarding : RATES.daycare;
+  var hrs = (o-i)/3600000;
+  if(svc==='daycare'){
+    var days=Math.max(1,Math.ceil(hrs/24));
+    return {rate:rate, fullDays:days, extraHrs:0, surcharge:0, total:+(rate*days).toFixed(2)};
+  }
+  var full=Math.floor(hrs/24), rem=hrs-full*24;
+  var sur = rem>THRESHOLD_HRS ? +(rate*SURCHARGE_PCT/100).toFixed(2) : 0;
+  var total = +((full===0&&rem>0 ? rate : rate*full)+sur).toFixed(2);
+  return {rate:rate, fullDays:full, extraHrs:+rem.toFixed(2), surcharge:sur, total:total};
+}
+
+function recalc(){
+  var ra=document.getElementById('result-area');
+  var times=getTimes();
+  var num=parseInt(document.getElementById('num-dogs').value)||0;
+  if(!times||num<1){
+    ra.innerHTML='<div class="empty"><span class="ei">🧮</span><p>Enter dates to see your estimate</p></div>';
+    return;
+  }
+  var one=calcOne(times.i,times.o);
+  var grand=+(one.total*num).toFixed(2);
+  var fd=function(d){return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});};
+  var durLabel = one.fullDays+(svc==='boarding'?' night':' day')+(one.fullDays!==1?'s':'')+(one.extraHrs>0?' + '+one.extraHrs+'h':'');
+  ra.innerHTML =
+    '<div class="result">'+
+      '<div class="rline"><span>'+(svc==='boarding'?'🏡 Boarding':'☀️ Day Care')+' rate</span><span class="v">$'+one.rate.toFixed(2)+(svc==='boarding'?' / night':' / day')+'</span></div>'+
+      '<div class="rline"><span>Duration</span><span class="v">'+durLabel+'</span></div>'+
+      (one.surcharge>0?'<div class="rline"><span>Late check-out surcharge (per dog)</span><span class="v">+$'+one.surcharge.toFixed(2)+'</span></div>':'')+
+      '<div class="rline"><span>Per dog</span><span class="v">$'+one.total.toFixed(2)+'</span></div>'+
+      (num>1?'<div class="rline"><span>Number of dogs</span><span class="v">× '+num+'</span></div>':'')+
+      '<div class="gtotal"><span class="lbl">Estimated total</span><span class="amt">$'+grand.toFixed(2)+'</span></div>'+
+      '<div class="est-note">'+fd(times.i)+' → '+fd(times.o)+'<br>This is an estimate. The final price is confirmed at check-out based on actual drop-off and pick-up times.</div>'+
+    '</div>';
+}
+
+// init
+recalc();
+</script>
+</body>
+</html>
