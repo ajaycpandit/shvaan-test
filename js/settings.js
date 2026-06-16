@@ -14,37 +14,36 @@ function renderSettings() {
   if(typeof updateThemeSettingsRow === 'function') updateThemeSettingsRow();
   
   // Render surcharge settings directly
-  const surchargeDiv = document.getElementById('settings-surcharge');
-  if(surchargeDiv){
-    const sType = s.surchargeType || 'percent';
-    const sPct = s.surchargePct || 25;
-    const sAmt = s.surchargeAmt || 15;
-    surchargeDiv.innerHTML = `
-      <div style="margin-top:12px;padding:12px;background:var(--cream-mid);border-radius:8px">
-        <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Surcharge Type</label>
-        <div style="display:flex;gap:10px;margin-bottom:12px">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1">
-            <input type="radio" name="surcharge-type" value="percent" ${sType==='percent'?'checked':''} onchange="changeSurcharge('percent')">
-            <span>Percentage (%)</span>
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1">
-            <input type="radio" name="surcharge-type" value="fixed" ${sType==='fixed'?'checked':''} onchange="changeSurcharge('fixed')">
-            <span>Fixed Amount ($)</span>
-          </label>
-        </div>
-        <label style="display:block;margin-bottom:4px;font-size:13px;font-weight:600">
-          ${sType==='percent'?'Surcharge %':'Surcharge Amount ($)'}
-        </label>
-        <input type="number" id="surcharge-val" value="${sType==='percent'?sPct:sAmt}" 
-          ${sType==='percent'?'step="1"':'step="0.01"'} min="0" 
-          style="width:100%;padding:8px;border:1px solid var(--cream-dark);border-radius:6px;font-family:inherit;font-size:14px"
-          onchange="updateSurcharge(this.value)">
-        <small style="display:block;margin-top:4px;color:var(--ink-faint);font-size:12px">
-          ${sType==='percent'?'% of daily rate':'$ per surcharge'}
-        </small>
-      </div>
-    `;
-  }
+  setTimeout(() => {
+    const surchargeDiv = document.getElementById('settings-surcharge');
+    if(surchargeDiv){
+      const sType = (settings && settings.surchargeType) ? settings.surchargeType : 'percent';
+      const sPct = (settings && settings.surchargePct) ? settings.surchargePct : 25;
+      const sAmt = (settings && settings.surchargeAmt) ? settings.surchargeAmt : 15;
+      
+      let html = '<div style="margin-top:12px;padding:12px;background:var(--cream-mid);border-radius:8px">';
+      html += '<label style="display:block;margin-bottom:8px;font-size:13px;font-weight:600">Surcharge Type</label>';
+      html += '<div style="display:flex;gap:10px;margin-bottom:12px">';
+      html += '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1">';
+      html += '<input type="radio" name="surcharge-type" value="percent" ' + (sType==='percent'?'checked':'') + ' onchange="changeSurcharge(\'percent\')">';
+      html += '<span>Percentage (%)</span>';
+      html += '</label>';
+      html += '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex:1">';
+      html += '<input type="radio" name="surcharge-type" value="fixed" ' + (sType==='fixed'?'checked':'') + ' onchange="changeSurcharge(\'fixed\')">';
+      html += '<span>Fixed Amount ($)</span>';
+      html += '</label>';
+      html += '</div>';
+      html += '<label style="display:block;margin-bottom:4px;font-size:13px;font-weight:600">' + (sType==='percent'?'Surcharge %':'Surcharge Amount ($)') + '</label>';
+      html += '<input type="number" id="surcharge-val" value="' + (sType==='percent'?sPct:sAmt) + '" ';
+      html += (sType==='percent'?'step="1"':'step="0.01"') + ' min="0" ';
+      html += 'style="width:100%;padding:8px;border:1px solid var(--cream-dark);border-radius:6px;font-family:inherit;font-size:14px" ';
+      html += 'onchange="updateSurcharge(this.value)">';
+      html += '<small style="display:block;margin-top:4px;color:var(--ink-faint);font-size:12px">' + (sType==='percent'?'% of daily rate':'$ per surcharge') + '</small>';
+      html += '</div>';
+      
+      surchargeDiv.innerHTML = html;
+    }
+  }, 10);
   
   // Team management — admin only
   const tc=document.getElementById('team-card');
@@ -52,16 +51,20 @@ function renderSettings() {
 }
 
 function changeSurcharge(type){
-  settings.surchargeType = type;
-  if(typeof dbUpdSet === 'function') dbUpdSet({surchargeType: type});
-  renderSettings();
+  if(settings){
+    settings.surchargeType = type;
+    if(typeof dbUpdSet === 'function') dbUpdSet({surchargeType: type});
+    renderSettings();
+  }
 }
 
 function updateSurcharge(val){
-  const num = parseFloat(val) || 0;
-  const key = settings.surchargeType === 'percent' ? 'surchargePct' : 'surchargeAmt';
-  settings[key] = num;
-  if(typeof dbUpdSet === 'function') dbUpdSet({[key]: num});
+  if(settings){
+    const num = parseFloat(val) || 0;
+    const key = settings.surchargeType === 'percent' ? 'surchargePct' : 'surchargeAmt';
+    settings[key] = num;
+    if(typeof dbUpdSet === 'function') dbUpdSet({[key]: num});
+  }
 }
 
 /* ── Role templates ───────────────────────────────────────── */
