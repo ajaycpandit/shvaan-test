@@ -181,6 +181,13 @@ function cioGetCheckinDate(){
   return r?new Date(r.actual_checkin||r.checkin):new Date();
 }
 function reqDogIds(r){ return (r.dog_ids&&r.dog_ids.length)?r.dog_ids:(r.dog_id?[r.dog_id]:[]); }
+// Returns a list of {dog} contexts for pricing — falls back to a synthetic dog when no record is linked
+function reqDogContexts(r){
+  const ids=reqDogIds(r);
+  if(ids.length) return ids.map(id=>dogs.find(x=>x.id===id)||{id:null,dog_name:r.dog_name,owner_name:r.owner_name,rate_override:null});
+  // No linked dog record (e.g. public booking/meet-greet): synthesize one from the reservation
+  return [{id:null,dog_name:r.dog_name||'Dog',owner_name:r.owner_name||'',rate_override:null}];
+}
 function cioUpdatePreview(){
   const prev=document.getElementById('cio-preview');
   if(cioMode!=='out'){ prev.style.display='none'; return; }
@@ -190,8 +197,7 @@ function cioUpdatePreview(){
   if(!d||!t||isNaN(inDt)){ prev.style.display='none'; return; }
   const outDt=new Date(d+'T'+t);
   if(isNaN(outDt)||outDt<=inDt){ prev.style.display='block'; prev.innerHTML='<span style="color:var(--danger)">Check-out must be after check-in.</span>'; return; }
-  const ids=reqDogIds(r);
-  const results=ids.map(id=>{ const dg=dogs.find(x=>x.id===id); return {dog:dg,...calcDogSvc(dg,inDt,outDt,r.service)}; });
+  const results=reqDogContexts(r).map(dg=>({dog:dg, ...calcDogSvc(dg,inDt,outDt,r.service)}));
   const subtotal=results.reduce((s,x)=>s+x.total,0);
   const disc=applyDiscount(subtotal);
   prev.style.display='block';
@@ -218,8 +224,8 @@ async function saveCio(){
       const inDt=cioGetCheckinDate();
       if(isNaN(inDt)){ setSyncState('ok'); toast('Please set a valid check-in time.', true); return; }
       if(stamp<=inDt){ setSyncState('ok'); toast('Check-out must be after check-in.', true); return; }
-      const ids=reqDogIds(r);
-      const results=ids.map(id=>{ const dg=dogs.find(x=>x.id===id); return {dog:dg,...calcDogSvc(dg,inDt,stamp,r.service)}; });
+      const ctxs=reqDogContexts(r);
+      const results=ctxs.map(dg=>({dog:dg, ...calcDogSvc(dg,inDt,stamp,r.service)}));
       const subtotal=results.reduce((s,x)=>s+x.total,0);
       const disc=applyDiscount(subtotal);
       const entries=results.map(x=>{ const share=subtotal>0?x.total/subtotal:0; const dDisc=+(disc.discount*share).toFixed(2); return {dogId:x.dog?x.dog.id:null,dogName:x.dog?x.dog.dog_name:'',ownerName:x.dog?x.dog.owner_name:r.owner_name,phone:x.dog?x.dog.phone:'',photo:x.dog?x.dog.photo:null,notes:x.dog?x.dog.notes:'',rate:x.rate,fullDays:x.fullDays,extraHrs:x.extraHrs,surcharge:x.surcharge,total:x.total,subtotal:x.total,discount:dDisc}; });

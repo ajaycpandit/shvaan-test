@@ -103,18 +103,24 @@ function renderCalList(){
 }
 function renderUpcoming(){
   const now=new Date(), in7=new Date(now); in7.setDate(in7.getDate()+7);
-  // Combine saved bookings + confirmed requests into one upcoming list
+  // Combine saved bookings + confirmed requests into one upcoming list (carry id + type)
   const reqAsBookings=requests.filter(r=>r.status==='confirmed'||r.status==='checked_in').map(r=>({
-    _req:true, _status:r.status, service:r.service, checkin:r.actual_checkin||r.checkin, checkout:r.checkout,
+    _req:true, _id:r.id, _status:r.status, service:r.service, checkin:r.actual_checkin||r.checkin, checkout:r.checkout,
     entries:[{dogName:r.dog_name,ownerName:r.owner_name}], grand_total:null
   }));
-  const all=[...bookings,...reqAsBookings];
+  const bookingsTagged=bookings.map(b=>Object.assign({_req:false,_id:b.id}, b));
+  const all=[...bookingsTagged,...reqAsBookings];
+  const clickAttr=(b)=>{
+    if(b._req) return ` onclick="openEditReq('${b._id}')" style="cursor:pointer;`;
+    if(b._id) return ` onclick="openInv('${b._id}')" style="cursor:pointer;`;
+    return ' style="';
+  };
   const up=all.filter(b=>new Date(b.checkin)>=now&&new Date(b.checkin)<=in7).sort((a,b)=>new Date(a.checkin)-new Date(b.checkin));
   const ul=document.getElementById('upcoming-list');
-  ul.innerHTML=up.length?up.map(b=>`<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--cream-mid)"><div style="font-size:19px">${b.service==='boarding'?'🏡':'☀️'}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc((b.entries||[]).map(e=>e.dogName||'').join(', '))}${b._req?' <span class="bdg bdg-g" style="margin-left:4px">Confirmed</span>':''}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(b.checkin).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})} → ${new Date(b.checkout).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div></div>${b.grand_total!=null?`<div style="font-family:'DM Serif Display',serif;font-size:15px;color:var(--ink)">$${parseFloat(b.grand_total).toFixed(2)}</div>`:''}</div>`).join(''):'<div class="es" style="padding:14px"><span class="ei" style="font-size:22px">📅</span><p>No upcoming stays this week</p></div>';
+  ul.innerHTML=up.length?up.map(b=>`<div${clickAttr(b)}display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--cream-mid)"><div style="font-size:19px">${b.service==='boarding'?'🏡':'☀️'}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc((b.entries||[]).map(e=>e.dogName||'').join(', '))}${b._req?' <span class="bdg bdg-g" style="margin-left:4px">Confirmed</span>':''}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(b.checkin).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})} → ${new Date(b.checkout).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div></div>${b.grand_total!=null?`<div style="font-family:'DM Serif Display',serif;font-size:15px;color:var(--ink)">$${parseFloat(b.grand_total).toFixed(2)}</div>`:'<span style="font-size:11px;color:var(--ink-faint)">View ›</span>'}</div>`).join(''):'<div class="es" style="padding:14px"><span class="ei" style="font-size:22px">📅</span><p>No upcoming stays this week</p></div>';
   const cur=all.filter(b=>new Date(b.checkin)<=now&&new Date(b.checkout)>=now);
   const cb=document.getElementById('currently-boarding');
-  cb.innerHTML=cur.length?cur.map(b=>`<div style="display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--cream-mid)"><div style="font-size:19px">🐶</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc((b.entries||[]).map(e=>e.dogName||'').join(', '))}</div><div style="font-size:11px;color:var(--ink-faint)">Checks out ${new Date(b.checkout).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})} at ${new Date(b.checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div></div><span class="bdg bdg-b">${b.service==='boarding'?'Boarding':'Day Care'}</span></div>`).join(''):'<div class="es" style="padding:14px"><span class="ei" style="font-size:22px">🏡</span><p>No dogs currently boarding</p></div>';
+  cb.innerHTML=cur.length?cur.map(b=>`<div${clickAttr(b)}display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--cream-mid)"><div style="font-size:19px">🐶</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc((b.entries||[]).map(e=>e.dogName||'').join(', '))}</div><div style="font-size:11px;color:var(--ink-faint)">Checks out ${new Date(b.checkout).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})} at ${new Date(b.checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div></div><span class="bdg bdg-b">${b.service==='boarding'?'Boarding':'Day Care'}</span></div>`).join(''):'<div class="es" style="padding:14px"><span class="ei" style="font-size:22px">🏡</span><p>No dogs currently boarding</p></div>';
 }
 function openDayMo(ds){
   const evts=calEvents().filter(e=>e.date===ds);

@@ -108,7 +108,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);l
       <input type="text" id="mg-times" placeholder="e.g., Weekday mornings, Saturday afternoons">
     </div>
 
-    <button class="btn" onclick="submitMG()">Schedule Meet & Greet</button>
+    <button class="btn" id="mg-submit" onclick="submitMG()">Schedule Meet & Greet</button>
     
     <div class="note">
       We'll reach out within 24 hours to confirm your appointment.
@@ -134,9 +134,12 @@ function submitMG() {
   const email = document.getElementById('mg-email').value.trim();
   const phone = document.getElementById('mg-phone').value.trim();
   const dogName = document.getElementById('mg-dog-name').value.trim();
+  const breed = document.getElementById('mg-breed').value.trim();
   const age = document.getElementById('mg-age').value.trim();
   const boarding = document.getElementById('mg-boarding').checked;
   const daycare = document.getElementById('mg-daycare').checked;
+  const times = document.getElementById('mg-times').value.trim();
+  const notesV = document.getElementById('mg-notes').value.trim();
 
   err.style.display = 'none';
   err.textContent = '';
@@ -148,19 +151,47 @@ function submitMG() {
   if (!age) { err.textContent = 'Please enter your dog\'s age'; err.style.display = 'block'; return; }
   if (!boarding && !daycare) { err.textContent = 'Please select at least one service'; err.style.display = 'block'; return; }
 
-  // In a real app, this would send to a database/email service
-  // For now, show success message
-  document.getElementById('mg-form').style.display = 'none';
-  document.getElementById('mg-success').style.display = 'block';
-  
-  // Log to console (in real app, this would POST to a server)
-  console.log('Meet & Greet Request:', {
-    name, email, phone, dogName,
-    breed: document.getElementById('mg-breed').value,
-    age,
-    services: [boarding ? 'Boarding' : '', daycare ? 'Day Care' : ''].filter(Boolean),
-    notes: document.getElementById('mg-notes').value,
-    times: document.getElementById('mg-times').value
+  const SB = 'https://xtvyyszobucmaktpulxt.supabase.co';
+  const SK = 'sb_publishable_yz_iycmCCjIld2KoB_SNDg_TLHYHdhv';
+  const services = [boarding ? 'Boarding' : '', daycare ? 'Day Care' : ''].filter(Boolean).join(' & ');
+  const btn = document.getElementById('mg-submit');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+
+  const now = new Date();
+  const rec = {
+    id: Date.now().toString() + Math.random().toString(36).slice(2),
+    dog_id: null,
+    dog_name: dogName,
+    owner_name: name,
+    service: boarding ? 'boarding' : 'daycare',
+    checkin: now.toISOString(),
+    checkout: now.toISOString(),
+    notes: ['🤝 MEET & GREET REQUEST',
+            'Interested in: ' + services,
+            breed ? 'Breed: ' + breed : '',
+            'Dog age: ' + age,
+            'Email: ' + email,
+            'Phone: ' + phone,
+            times ? 'Preferred times: ' + times : '',
+            notesV ? 'Notes: ' + notesV : ''].filter(Boolean).join(' | '),
+    status: 'pending',
+    created_at: now.toISOString(),
+    source: 'meet-greet'
+  };
+
+  fetch(SB + '/rest/v1/requests', {
+    method: 'POST',
+    headers: { 'apikey': SK, 'Authorization': 'Bearer ' + SK, 'Content-Type': 'application/json' },
+    body: JSON.stringify(rec)
+  }).then(function(res){
+    if (!res.ok) { return res.text().then(function(t){ throw new Error(t || 'Submission failed'); }); }
+    document.getElementById('mg-form').style.display = 'none';
+    document.getElementById('mg-success').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }).catch(function(e){
+    if (btn) { btn.disabled = false; btn.textContent = 'Request Meet & Greet'; }
+    err.textContent = 'Sorry, something went wrong: ' + e.message + '. Please call us instead.';
+    err.style.display = 'block';
   });
 }
 </script>
