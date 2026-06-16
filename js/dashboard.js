@@ -249,6 +249,29 @@ async function undoCheckout(requestId){
   }
 }
 
+// Undo a mistaken check-in — revert checked_in → confirmed, clear the check-in timestamp.
+async function undoCheckIn(requestId){
+  const req = (typeof requests!=='undefined'?requests:[]).find(r => r.id === requestId);
+  if(!req){ toast('Reservation not found.', true); return; }
+  if(req.status !== 'checked_in'){ toast('This reservation is not checked in.', true); return; }
+  if(!confirm('Undo check-in for '+req.dog_name+'?\n\nThis sends the reservation back to "confirmed" and clears the recorded check-in time.')) return;
+
+  setSyncState('busy');
+  try{
+    await dbUpdReq(req.id, {status:'confirmed', actual_checkin:null});
+    req.status = 'confirmed';
+    req.actual_checkin = null;
+    setSyncState('ok');
+    toast('✓ Check-in undone — '+req.dog_name+' is back to confirmed.');
+    if(typeof updateBadges==='function') updateBadges();
+    if(typeof renderDashboard==='function') renderDashboard();
+    if(typeof renderRequests==='function') renderRequests();
+  }catch(e){
+    setSyncState('err');
+    toast('Error: '+e.message, true);
+  }
+}
+
 // Day Navigation — shows arrivals, departures, and dogs whose stay overlaps the day
 let browseDate = new Date();
 
