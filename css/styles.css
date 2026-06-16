@@ -442,6 +442,16 @@ input:focus, select:focus, textarea:focus{ outline:none; }
 .ss{padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--cream-dark)}
 .ss:last-child{padding-bottom:0;margin-bottom:0;border-bottom:none}
 .ss h3{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+/* Collapsible settings accordion */
+.acc{border:1px solid var(--cream-dark);border-radius:var(--r2);margin-bottom:10px;overflow:hidden;background:var(--cream)}
+.acc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;cursor:pointer;user-select:none;background:var(--cream-mid);transition:background .15s}
+.acc-head:hover{background:var(--cream-dark)}
+.acc-head h3{font-size:14px;font-weight:600;color:var(--ink);margin:0;display:flex;align-items:center;gap:8px}
+.acc-head .chev{transition:transform .2s;color:var(--ink-faint);flex:none}
+.acc.open .acc-head .chev{transform:rotate(90deg)}
+.acc-body{display:none;padding:16px 15px}
+.acc.open .acc-body{display:block}
+.acc-body .ss{border:none;padding:0;margin:0}
 
 /* Right panel items — warmer hover */
 .rp-item:hover{background:var(--cream-dark);color:var(--ink)}

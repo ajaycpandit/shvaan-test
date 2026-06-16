@@ -343,7 +343,8 @@
       <div id="pg-settings" class="pg">
         <div class="ph"><h1>Settings</h1><p>Shared across all users.</p></div>
         <div class="card">
-          <div class="ss" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <!-- Theme: kept inline at top, always visible -->
+          <div class="ss" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1px solid var(--cream-dark);padding-bottom:16px;margin-bottom:16px">
             <div>
               <h3 style="margin-bottom:2px">🎨 App Theme</h3>
               <div style="font-size:12px;color:var(--ink-faint)">Current: <span id="theme-current-label" style="font-weight:600;color:var(--ink-mid)">Warm terracotta</span></div>
@@ -353,47 +354,75 @@
               <button class="btn btn-o sm" onclick="openThemeMo()">Change theme</button>
             </div>
           </div>
-          <div class="ss"><h3>💰 Default Rates</h3>
-            <div class="g2">
-              <div class="fd"><label>Boarding Rate (per 24h)</label><input type="number" id="s-br" step="0.01" min="0"><div class="fh">Base nightly boarding rate</div></div>
-              <div class="fd"><label>Day Care Rate (per day)</label><input type="number" id="s-dc" step="0.01" min="0"><div class="fh">Daytime-only care rate</div></div>
-            </div>
-          </div>
-          <div class="ss"><h3>⏱ Surcharge Rules</h3>
-            <div class="g2">
-              <div class="fd"><label>Grace Period (hours)</label><input type="number" id="s-th" step="0.5" min="0" max="23"><div class="fh">Hours allowed before surcharge kicks in</div></div>
-            </div>
-            <!-- NEW: Surcharge Options (% vs Fixed) -->
-            <div id="settings-surcharge"></div>
-            <div class="sc-prev" id="sc-prev"></div>
-          </div>
-          <div class="ss"><h3>🏠 Capacity</h3>
-            <div class="fd" style="max-width:220px"><label>Total Kennels / Spaces</label><input type="number" id="s-cap" min="1" step="1"><div class="fh">Used for occupancy % and overbooking alerts</div></div>
-          </div>
-          <div class="ss"><h3>📊 Dashboard Trends</h3>
-            <div class="fh" style="margin-bottom:10px">Choose which trend panels appear on your dashboard. Toggle any on or off as you like.</div>
-            <div id="settings-trends"></div>
-          </div>
-          <div class="ss"><h3>🖼️ Business Logo</h3>
-            <p style="font-size:12px;color:var(--ink-faint);margin-bottom:10px;line-height:1.5">Upload your own logo (PNG/JPG, under 1MB). Appears in the sidebar, loading screen, and on invoices.</p>
-            <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
-              <div style="background:var(--cream-mid);border:1px solid var(--cream-dark);border-radius:var(--r2);padding:10px;display:flex;align-items:center;justify-content:center;min-width:120px;min-height:54px"><img id="logo-preview" alt="Logo preview" style="height:44px;width:150px;object-fit:contain"></div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn btn-o sm" onclick="document.getElementById('logo-file').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 3v12M8 11l4 4 4-4M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>Upload Logo</button>
-                <button class="btn btn-o sm" onclick="resetLogo()">Use Default</button>
+
+          <div class="acc open" id="acc-rates">
+            <div class="acc-head" onclick="toggleAcc('acc-rates')"><h3>💰 Default Rates &amp; Surcharge</h3><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg></div>
+            <div class="acc-body">
+              <div class="ss">
+                <div class="g2">
+                  <div class="fd"><label>Boarding Rate (per 24h)</label><input type="number" id="s-br" step="0.01" min="0"><div class="fh">Base nightly boarding rate</div></div>
+                  <div class="fd"><label>Day Care Rate (per day)</label><input type="number" id="s-dc" step="0.01" min="0"><div class="fh">Daytime-only care rate</div></div>
+                </div>
               </div>
-              <input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="handleLogoFile(this)">
+              <div class="ss" style="margin-top:16px">
+                <div class="g2">
+                  <div class="fd"><label>Grace Period (hours)</label><input type="number" id="s-th" step="0.5" min="0" max="23"><div class="fh">Hours allowed before surcharge kicks in</div></div>
+                </div>
+                <div id="settings-surcharge"></div>
+                <div class="sc-prev" id="sc-prev"></div>
+              </div>
             </div>
           </div>
-          <div class="ss"><h3>🏢 Business Info (for invoices)</h3>
-            <div class="g2">
-              <div class="fd"><label>Business Name</label><input type="text" id="s-bn" placeholder="Paws & Board"></div>
-              <div class="fd"><label>Phone</label><input type="tel" id="s-bp" placeholder="(555) 000-0000"></div>
-              <div class="fd"><label>Email</label><input type="email" id="s-be" placeholder="hello@pawsandboard.com"></div>
-              <div class="fd"><label>Address</label><input type="text" id="s-ba" placeholder="123 Main St, City, State"></div>
+
+          <div class="acc" id="acc-capacity">
+            <div class="acc-head" onclick="toggleAcc('acc-capacity')"><h3>🏠 Capacity</h3><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg></div>
+            <div class="acc-body">
+              <div class="ss"><div class="fd" style="max-width:220px"><label>Total Kennels / Spaces</label><input type="number" id="s-cap" min="1" step="1"><div class="fh">Used for occupancy % and overbooking alerts</div></div></div>
             </div>
           </div>
-          <div class="btn-row">
+
+          <div class="acc" id="acc-trends">
+            <div class="acc-head" onclick="toggleAcc('acc-trends')"><h3>📊 Dashboard Trends</h3><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg></div>
+            <div class="acc-body">
+              <div class="ss">
+                <div class="fh" style="margin-bottom:10px">Choose which trend panels appear on your dashboard. Toggle any on or off as you like.</div>
+                <div id="settings-trends"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="acc" id="acc-logo">
+            <div class="acc-head" onclick="toggleAcc('acc-logo')"><h3>🖼️ Business Logo</h3><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg></div>
+            <div class="acc-body">
+              <div class="ss">
+                <p style="font-size:12px;color:var(--ink-faint);margin-bottom:10px;line-height:1.5">Upload your own logo (PNG/JPG, under 1MB). Appears in the sidebar, loading screen, and on invoices.</p>
+                <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+                  <div style="background:var(--cream-mid);border:1px solid var(--cream-dark);border-radius:var(--r2);padding:10px;display:flex;align-items:center;justify-content:center;min-width:120px;min-height:54px"><img id="logo-preview" alt="Logo preview" style="height:44px;width:150px;object-fit:contain"></div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="btn btn-o sm" onclick="document.getElementById('logo-file').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 3v12M8 11l4 4 4-4M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2"/></svg>Upload Logo</button>
+                    <button class="btn btn-o sm" onclick="resetLogo()">Use Default</button>
+                  </div>
+                  <input type="file" id="logo-file" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="handleLogoFile(this)">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="acc" id="acc-bizinfo">
+            <div class="acc-head" onclick="toggleAcc('acc-bizinfo')"><h3>🏢 Business Info (for invoices)</h3><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg></div>
+            <div class="acc-body">
+              <div class="ss">
+                <div class="g2">
+                  <div class="fd"><label>Business Name</label><input type="text" id="s-bn" placeholder="Paws & Board"></div>
+                  <div class="fd"><label>Phone</label><input type="tel" id="s-bp" placeholder="(555) 000-0000"></div>
+                  <div class="fd"><label>Email</label><input type="email" id="s-be" placeholder="hello@pawsandboard.com"></div>
+                  <div class="fd"><label>Address</label><input type="text" id="s-ba" placeholder="123 Main St, City, State"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-row" style="margin-top:16px">
             <button class="btn btn-p" onclick="saveSettings()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Save Settings</button>
             <button class="btn btn-o" onclick="resetSettings()">Reset Defaults</button>
           </div>
