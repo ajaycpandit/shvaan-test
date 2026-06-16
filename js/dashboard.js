@@ -318,8 +318,8 @@ function todayDay(){ browseDate = new Date(); renderDayNavigation(); }
    DASHBOARD: Trend perspectives (switchable)
 ═══════════════════════════════════════ */
 let trendView = null;
+let trendFormat = 'bar';  // 'bar' | 'line' | 'donut'
 
-// Catalog of all available trends. enable/disable is stored in settings.trendsEnabled
 const TREND_CATALOG = [
   ['revenue',   'Revenue mix',        'Boarding vs day care revenue split'],
   ['occupancy', 'Occupancy',          '% of capacity booked over next 14 days'],
@@ -331,55 +331,143 @@ const TREND_CATALOG = [
   ['dow',       'Day-of-week demand', 'Which weekdays are busiest']
 ];
 
+// Which formats make sense per trend. 'stat' trends show a single number (no chart choice).
+const TREND_FORMATS = {
+  revenue:   ['bar','donut'],
+  occupancy: ['bar','line'],
+  volume:    ['bar','line'],
+  breeds:    ['bar'],            // two grouped lists; bars only
+  los:       ['stat'],
+  revpak:    ['stat'],
+  retention: ['bar','donut'],
+  dow:       ['bar','line']
+};
+
 function trendEnabled(key){
   const t = (typeof settings!=='undefined' && settings.trendsEnabled) ? settings.trendsEnabled : null;
-  if(!t) return true; // default: all on until the owner customizes
+  if(!t) return true;
   return t[key] !== false;
 }
-
 function enabledTrends(){ return TREND_CATALOG.filter(t=>trendEnabled(t[0])); }
 
-function setTrendView(v){ trendView = v; renderTrends(); }
+function setTrendView(v){
+  trendView = v;
+  // reset format to first valid one for this trend
+  const fmts = TREND_FORMATS[v] || ['bar'];
+  if(fmts.indexOf(trendFormat)===-1) trendFormat = fmts[0];
+  renderTrends();
+}
+function setTrendFormat(f){ trendFormat = f; renderTrends(); }
 
 function renderTrends(){
   const host = document.getElementById('dash-trends');
   if(!host) return;
-
   const avail = enabledTrends();
-  if(!avail.length){ host.innerHTML=''; return; } // all disabled -> hide section
-
-  // default selection / repair if current selection got disabled
-  if(!trendView || !avail.some(t=>t[0]===trendView)) trendView = avail[0][0];
+  if(!avail.length){ host.innerHTML=''; return; }
+  if(!trendView || !avail.some(t=>t[0]===trendView)){ trendView = avail[0][0]; trendFormat = (TREND_FORMATS[trendView]||['bar'])[0]; }
 
   let html = '<div class="card"><div class="ct">📊 Trends</div>';
-  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">';
-  avail.forEach(([key,label])=>{
-    const on = trendView===key;
+  // trend selector
+  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">';
+  avail.forEach(function(t){
+    const key=t[0], label=t[1], on = trendView===key;
     html += '<button class="btn '+(on?'btn-p':'btn-o')+' sm" style="font-size:11px" onclick="setTrendView(\''+key+'\')">'+esc(label)+'</button>';
   });
   html += '</div>';
+
+  // format selector (only when >1 format available)
+  const fmts = TREND_FORMATS[trendView] || ['bar'];
+  if(fmts.length>1 && fmts.indexOf('stat')===-1){
+    const fmtLabel={bar:'▭ Bars',line:'📈 Line',donut:'◓ Donut'};
+    html += '<div style="display:flex;gap:6px;margin-bottom:14px">';
+    fmts.forEach(function(f){
+      const on = trendFormat===f;
+      html += '<button class="btn '+(on?'btn-p':'btn-o')+' sm" style="font-size:10px;padding:4px 9px" onclick="setTrendFormat(\''+f+'\')">'+fmtLabel[f]+'</button>';
+    });
+    html += '</div>';
+  }
+
   html += '<div>'+trendBody()+'</div>';
   html += '</div>';
   host.innerHTML = html;
 }
 
+/* ── format renderers ── */
 function trendBar(label, value, max, valueLabel, color){
   const pct = max>0 ? Math.round((value/max)*100) : 0;
   color = color || 'var(--brown)';
   return '<div style="margin-bottom:10px">'
     + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'
     + '<span style="color:var(--ink)">'+esc(label)+'</span>'
-    + '<span style="color:var(--ink-faint);font-weight:600">'+esc(valueLabel)+'</span>'
-    + '</div>'
+    + '<span style="color:var(--ink-faint);font-weight:600">'+esc(valueLabel)+'</span></div>'
     + '<div style="height:8px;background:var(--cream-mid);border-radius:5px;overflow:hidden">'
-    + '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:5px"></div>'
-    + '</div></div>';
+    + '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:5px"></div></div></div>';
 }
-
 function trendStat(big, sub){
   return '<div style="text-align:center;padding:14px 0"><div style="font-family:\'DM Serif Display\',serif;font-size:34px;color:var(--ink);line-height:1.1">'+esc(big)+'</div><div style="font-size:12px;color:var(--ink-faint);margin-top:4px">'+esc(sub)+'</div></div>';
 }
+// series = [{label, value, valueLabel, color}]
+function renderSeries(series, unitLabel){
+  if(trendFormat==='line') return trendLine(series, unitLabel);
+  if(trendFormat==='donut') return trendDonut(series);
+  // default bars
+  const max = Math.max.apply(null, series.map(function(s){return s.value;}).concat([0]));
+  return series.map(function(s){ return trendBar(s.label, s.value, max, s.valueLabel, s.color); }).join('');
+}
+function trendLine(series, unitLabel){
+  if(series.length<2) { // not enough points for a line; fall back to bars
+    const max=Math.max.apply(null,series.map(function(s){return s.value;}).concat([0]));
+    return series.map(function(s){return trendBar(s.label,s.value,max,s.valueLabel,s.color);}).join('');
+  }
+  const W=300, H=120, padL=8, padR=8, padT=10, padB=22;
+  const vals=series.map(function(s){return s.value;});
+  const maxV=Math.max.apply(null,vals), minV=Math.min.apply(null,vals.concat([0]));
+  const span=(maxV-minV)||1;
+  const n=series.length;
+  const x=function(i){ return padL + i*((W-padL-padR)/(n-1)); };
+  const y=function(v){ return padT + (H-padT-padB)*(1-(v-minV)/span); };
+  let pts=series.map(function(s,i){return x(i)+','+y(s.value);}).join(' ');
+  // area fill path
+  let area='M'+x(0)+','+(H-padB)+' L'+series.map(function(s,i){return x(i)+','+y(s.value);}).join(' L')+' L'+x(n-1)+','+(H-padB)+' Z';
+  let dots=series.map(function(s,i){return '<circle cx="'+x(i)+'" cy="'+y(s.value)+'" r="3" fill="var(--brown)"/>';}).join('');
+  let labels=series.map(function(s,i){
+    const anchor = i===0?'start':(i===n-1?'end':'middle');
+    return '<text x="'+x(i)+'" y="'+(H-6)+'" font-size="9" fill="var(--ink-faint)" text-anchor="'+anchor+'">'+esc(s.label)+'</text>';
+  }).join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;overflow:visible">'
+    + '<path d="'+area+'" fill="var(--brown)" opacity="0.10"/>'
+    + '<polyline points="'+pts+'" fill="none" stroke="var(--brown)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+    + dots + labels
+    + '</svg>'
+    + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-faint);margin-top:6px"><span>'+esc(series[0].valueLabel)+'</span><span>'+esc(series[n-1].valueLabel)+'</span></div>';
+}
+function trendDonut(series){
+  const total=series.reduce(function(a,s){return a+s.value;},0);
+  if(total<=0) return '<div style="padding:10px 0;color:var(--ink-faint);font-size:13px">Not enough data yet.</div>';
+  const R=52, r=32, cx=70, cy=70, C=2*Math.PI*((R+r)/2), sw=R-r;
+  let acc=0, segs='';
+  const palette=['var(--brown)','var(--gold)','var(--forest)','var(--coral)','#9C7BB8','#5B8DB8'];
+  series.forEach(function(s,i){
+    const frac=s.value/total;
+    const dash=frac*C;
+    const color=s.color||palette[i%palette.length];
+    segs += '<circle cx="'+cx+'" cy="'+cy+'" r="'+((R+r)/2)+'" fill="none" stroke="'+color+'" stroke-width="'+sw+'" '
+         + 'stroke-dasharray="'+dash+' '+(C-dash)+'" stroke-dashoffset="'+(-acc)+'" transform="rotate(-90 '+cx+' '+cy+')"/>';
+    acc += dash;
+  });
+  let legend=series.map(function(s,i){
+    const color=s.color||palette[i%palette.length];
+    const pct=Math.round(s.value/total*100);
+    return '<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;font-size:12px"><span style="width:11px;height:11px;border-radius:3px;background:'+color+';flex:none"></span><span style="flex:1;color:var(--ink)">'+esc(s.label)+'</span><span style="color:var(--ink-faint);font-weight:600">'+esc(s.valueLabel)+'</span></div>';
+  }).join('');
+  return '<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">'
+    + '<svg viewBox="0 0 140 140" style="width:140px;height:140px;flex:none">'+segs
+    + '<text x="70" y="74" font-size="15" font-weight="700" fill="var(--ink)" text-anchor="middle">'+esc(series.length+'')+'</text>'
+    + '<text x="70" y="90" font-size="9" fill="var(--ink-faint)" text-anchor="middle">segments</text></svg>'
+    + '<div style="flex:1;min-width:140px">'+legend+'</div></div>';
+}
 
+/* ── trend data + bodies ── */
 function trendBody(){
   const bk = (typeof bookings!=='undefined'?bookings:[]);
   const rq = (typeof requests!=='undefined'?requests:[]);
@@ -388,70 +476,72 @@ function trendBody(){
 
   if(trendView==='revenue'){
     let boardRev=0, dayRev=0;
-    bk.forEach(b=>{ const amt=parseFloat(b.grand_total)||0; if(b.service==='daycare') dayRev+=amt; else boardRev+=amt; });
+    bk.forEach(function(b){ const amt=parseFloat(b.grand_total)||0; if(b.service==='daycare') dayRev+=amt; else boardRev+=amt; });
     const total=boardRev+dayRev;
     if(total<=0) return empty;
-    const max=Math.max(boardRev,dayRev);
-    return trendBar('🏡 Boarding', boardRev, max, '$'+boardRev.toFixed(0)+' · '+Math.round(boardRev/total*100)+'%', 'var(--brown)')
-      + trendBar('☀️ Day Care', dayRev, max, '$'+dayRev.toFixed(0)+' · '+Math.round(dayRev/total*100)+'%', 'var(--gold)')
-      + '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--cream-mid);display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600">Total billed</span><span style="font-weight:700">$'+total.toFixed(0)+'</span></div>';
+    const series=[
+      {label:'🏡 Boarding', value:boardRev, valueLabel:'$'+boardRev.toFixed(0)+' · '+Math.round(boardRev/total*100)+'%', color:'var(--brown)'},
+      {label:'☀️ Day Care', value:dayRev, valueLabel:'$'+dayRev.toFixed(0)+' · '+Math.round(dayRev/total*100)+'%', color:'var(--gold)'}
+    ];
+    let extra = trendFormat==='donut' ? '' : '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--cream-mid);display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600">Total billed</span><span style="font-weight:700">$'+total.toFixed(0)+'</span></div>';
+    return renderSeries(series)+extra;
   }
 
   if(trendView==='occupancy'){
     const cap = (typeof settings!=='undefined' && settings.capacity) ? settings.capacity : 12;
     const today=new Date(); today.setHours(0,0,0,0);
-    let rows=''; let any=false;
+    const series=[]; let any=false;
     for(let i=0;i<14;i++){
       const day=new Date(today); day.setDate(day.getDate()+i);
       const dayStart=new Date(day); dayStart.setHours(0,0,0,0);
       const dayEnd=new Date(day); dayEnd.setHours(23,59,59,999);
       let count=0;
-      rq.forEach(r=>{
+      rq.forEach(function(r){
         if(r.status==='declined'||r.status==='completed'||r.status==='pending') return;
         const ci=new Date(r.actual_checkin||r.checkin), co=new Date(r.checkout);
         if(!isNaN(ci) && ci<=dayEnd && (isNaN(co)?true:co>=dayStart)){ count+= (r.dog_ids&&r.dog_ids.length)?r.dog_ids.length:1; }
       });
       if(count>0) any=true;
-      const lbl = i===0 ? 'Today' : day.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      const lbl = i===0 ? 'Today' : day.toLocaleDateString('en-US',{month:'short',day:'numeric'});
       const pctNum = Math.round((count/cap)*100);
       const color = pctNum>=90 ? 'var(--danger)' : pctNum>=70 ? 'var(--gold)' : 'var(--forest)';
-      rows += trendBar(lbl, count, cap, count+'/'+cap+' · '+pctNum+'%', color);
+      series.push({label:lbl, value:count, valueLabel:count+'/'+cap+' · '+pctNum+'%', color:color});
     }
     if(!any) return '<div style="padding:10px 0;color:var(--ink-faint);font-size:13px">No confirmed stays in the next 14 days.</div>';
-    return '<div style="font-size:11px;color:var(--ink-faint);margin-bottom:10px">Capacity '+cap+' spaces · next 14 days</div>'+rows;
+    return '<div style="font-size:11px;color:var(--ink-faint);margin-bottom:10px">Capacity '+cap+' spaces · next 14 days</div>'+renderSeries(series);
   }
 
   if(trendView==='volume'){
     const months={};
-    bk.forEach(b=>{ const d=new Date(b.saved_at||b.checkin); if(isNaN(d)) return; const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); months[key]=(months[key]||0)+1; });
+    bk.forEach(function(b){ const d=new Date(b.saved_at||b.checkin); if(isNaN(d)) return; const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); months[key]=(months[key]||0)+1; });
     const keys=Object.keys(months).sort().slice(-6);
     if(!keys.length) return empty;
-    const max=Math.max.apply(null,keys.map(k=>months[k]));
-    return keys.map(k=>{
+    const series=keys.map(function(k){
       const parts=k.split('-');
       const lbl=new Date(+parts[0],+parts[1]-1,1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
-      return trendBar(lbl, months[k], max, months[k]+' visit'+(months[k]!==1?'s':''), 'var(--brown)');
-    }).join('');
+      return {label:lbl, value:months[k], valueLabel:months[k]+' visit'+(months[k]!==1?'s':''), color:'var(--brown)'};
+    });
+    return renderSeries(series);
   }
 
   if(trendView==='breeds'){
     const breeds={};
-    dg.forEach(d=>{ const b=(d.breed||'').trim()||'Unknown'; breeds[b]=(breeds[b]||0)+1; });
-    const topBreeds=Object.entries(breeds).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    dg.forEach(function(d){ const b=(d.breed||'').trim()||'Unknown'; breeds[b]=(breeds[b]||0)+1; });
+    const topBreeds=Object.entries(breeds).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
     const ownerCounts={};
-    bk.forEach(b=>{ (b.entries||[]).forEach(e=>{ const o=(e.ownerName||'').trim(); if(o) ownerCounts[o]=(ownerCounts[o]||0)+1; }); });
-    const repeats=Object.entries(ownerCounts).filter(e=>e[1]>1).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    bk.forEach(function(b){ (b.entries||[]).forEach(function(e){ const o=(e.ownerName||'').trim(); if(o) ownerCounts[o]=(ownerCounts[o]||0)+1; }); });
+    const repeats=Object.entries(ownerCounts).filter(function(e){return e[1]>1;}).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
     if(!topBreeds.length && !repeats.length) return empty;
     let out='';
     if(topBreeds.length){
       const max=topBreeds[0][1];
       out += '<div style="font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Top breeds</div>';
-      out += topBreeds.map(e=>trendBar(e[0], e[1], max, e[1]+' dog'+(e[1]!==1?'s':''), 'var(--brown)')).join('');
+      out += topBreeds.map(function(e){return trendBar(e[0], e[1], max, e[1]+' dog'+(e[1]!==1?'s':''), 'var(--brown)');}).join('');
     }
     if(repeats.length){
       const max=repeats[0][1];
       out += '<div style="font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">Repeat customers</div>';
-      out += repeats.map(e=>trendBar(e[0], e[1], max, e[1]+' stays', 'var(--gold)')).join('');
+      out += repeats.map(function(e){return trendBar(e[0], e[1], max, e[1]+' stays', 'var(--gold)');}).join('');
     } else {
       out += '<div style="margin-top:12px;font-size:12px;color:var(--ink-faint)">No repeat customers yet.</div>';
     }
@@ -459,19 +549,17 @@ function trendBody(){
   }
 
   if(trendView==='los'){
-    // Average length of stay (nights) for boarding bookings
     let totalNights=0, n=0;
-    bk.forEach(b=>{ if(b.service==='daycare') return; const ci=new Date(b.checkin), co=new Date(b.checkout); if(isNaN(ci)||isNaN(co)) return; const nights=Math.max(1,Math.round((co-ci)/86400000)); totalNights+=nights; n++; });
+    bk.forEach(function(b){ if(b.service==='daycare') return; const ci=new Date(b.checkin), co=new Date(b.checkout); if(isNaN(ci)||isNaN(co)) return; const nights=Math.max(1,Math.round((co-ci)/86400000)); totalNights+=nights; n++; });
     if(!n) return empty;
     const avg=(totalNights/n).toFixed(1);
     return trendStat(avg+' nights', 'Average boarding stay · across '+n+' completed stay'+(n!==1?'s':''));
   }
 
   if(trendView==='revpak'){
-    // Revenue per available kennel-night (RevPAK): total boarding revenue / (capacity * days in window)
     const cap = (typeof settings!=='undefined' && settings.capacity) ? settings.capacity : 12;
     let rev=0, minD=null, maxD=null;
-    bk.forEach(b=>{ const amt=parseFloat(b.grand_total)||0; rev+=amt; const d=new Date(b.saved_at||b.checkin); if(!isNaN(d)){ if(!minD||d<minD)minD=d; if(!maxD||d>maxD)maxD=d; } });
+    bk.forEach(function(b){ const amt=parseFloat(b.grand_total)||0; rev+=amt; const d=new Date(b.saved_at||b.checkin); if(!isNaN(d)){ if(!minD||d<minD)minD=d; if(!maxD||d>maxD)maxD=d; } });
     if(rev<=0||!minD) return empty;
     const days=Math.max(1,Math.round((maxD-minD)/86400000)+1);
     const revpak=rev/(cap*days);
@@ -480,29 +568,28 @@ function trendBody(){
   }
 
   if(trendView==='retention'){
-    // New vs returning: for each booking entry, was that owner seen in an earlier booking?
     const seen={}; let nw=0, ret=0;
-    const ordered=bk.slice().sort((a,b)=>new Date(a.saved_at||a.checkin)-new Date(b.saved_at||b.checkin));
-    ordered.forEach(b=>{ (b.entries||[]).forEach(e=>{ const o=(e.ownerName||'').trim().toLowerCase(); if(!o) return; if(seen[o]) ret++; else { nw++; seen[o]=true; } }); });
+    const ordered=bk.slice().sort(function(a,b){return new Date(a.saved_at||a.checkin)-new Date(b.saved_at||b.checkin);});
+    ordered.forEach(function(b){ (b.entries||[]).forEach(function(e){ const o=(e.ownerName||'').trim().toLowerCase(); if(!o) return; if(seen[o]) ret++; else { nw++; seen[o]=true; } }); });
     const total=nw+ret;
     if(!total) return empty;
-    const max=Math.max(nw,ret);
-    return trendBar('🆕 New customers', nw, max, nw+' · '+Math.round(nw/total*100)+'%', 'var(--forest)')
-      + trendBar('🔁 Returning', ret, max, ret+' · '+Math.round(ret/total*100)+'%', 'var(--gold)')
-      + '<div style="font-size:11px;color:var(--ink-faint);text-align:center;margin-top:6px">Higher returning share = stronger loyalty</div>';
+    const series=[
+      {label:'🆕 New customers', value:nw, valueLabel:nw+' · '+Math.round(nw/total*100)+'%', color:'var(--forest)'},
+      {label:'🔁 Returning', value:ret, valueLabel:ret+' · '+Math.round(ret/total*100)+'%', color:'var(--gold)'}
+    ];
+    const note = trendFormat==='donut' ? '' : '<div style="font-size:11px;color:var(--ink-faint);text-align:center;margin-top:6px">Higher returning share = stronger loyalty</div>';
+    return renderSeries(series)+note;
   }
 
   if(trendView==='dow'){
-    // Day-of-week demand: count check-ins by weekday
     const dows=[0,0,0,0,0,0,0]; const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    bk.forEach(b=>{ const d=new Date(b.checkin); if(!isNaN(d)) dows[d.getDay()]++; });
-    rq.filter(r=>r.status==='confirmed'||r.status==='checked_in').forEach(r=>{ const d=new Date(r.actual_checkin||r.checkin); if(!isNaN(d)) dows[d.getDay()]++; });
-    const total=dows.reduce((a,b)=>a+b,0);
+    bk.forEach(function(b){ const d=new Date(b.checkin); if(!isNaN(d)) dows[d.getDay()]++; });
+    rq.filter(function(r){return r.status==='confirmed'||r.status==='checked_in';}).forEach(function(r){ const d=new Date(r.actual_checkin||r.checkin); if(!isNaN(d)) dows[d.getDay()]++; });
+    const total=dows.reduce(function(a,b){return a+b;},0);
     if(!total) return empty;
-    const max=Math.max.apply(null,dows);
-    // Reorder Mon..Sun for readability
     const order=[1,2,3,4,5,6,0];
-    return order.map(i=>trendBar(names[i], dows[i], max, String(dows[i]), i===0||i===6?'var(--gold)':'var(--brown)')).join('');
+    const series=order.map(function(i){ return {label:names[i], value:dows[i], valueLabel:String(dows[i]), color:(i===0||i===6?'var(--gold)':'var(--brown)')}; });
+    return renderSeries(series);
   }
 
   return empty;

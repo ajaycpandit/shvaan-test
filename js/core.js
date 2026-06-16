@@ -12,13 +12,17 @@ const SCHEMA = hostname.includes('test') ? 'test' : 'public';
 
 let authToken = null; // Supabase user access token when signed in
 async function sbFetch(path, method='GET', body=null, _retried=false) {
-  // 🆕 AUTO-PREFIX TABLE NAMES WITH SCHEMA
+  // AUTO-PREFIX TABLE NAMES WITH SCHEMA.
+  // The table name is everything before the first '?'. Only prefix if the table
+  // name itself isn't already schema-qualified (no '.' in the table portion).
+  // NOTE: filters after '?' (e.g. id=eq.123, order=created_at.desc) legitimately
+  // contain dots and must NOT prevent prefixing.
   let queryPath = path;
-  if (!path.includes('.') && !path.includes('?')) {
-    queryPath = `${SCHEMA}.${path}`;
-  } else if (!path.includes('.') && path.includes('?')) {
-    const [table, filter] = path.split('?');
-    queryPath = `${SCHEMA}.${table}?${filter}`;
+  const qIdx = path.indexOf('?');
+  const table = qIdx === -1 ? path : path.slice(0, qIdx);
+  const filter = qIdx === -1 ? '' : path.slice(qIdx); // includes leading '?'
+  if (!table.includes('.')) {
+    queryPath = `${SCHEMA}.${table}${filter}`;
   }
   
   const opts = {
