@@ -317,7 +317,27 @@ function todayDay(){ browseDate = new Date(); renderDayNavigation(); }
 /* ═══════════════════════════════════════
    DASHBOARD: Trend perspectives (switchable)
 ═══════════════════════════════════════ */
-let trendView = 'revenue';
+let trendView = null;
+
+// Catalog of all available trends. enable/disable is stored in settings.trendsEnabled
+const TREND_CATALOG = [
+  ['revenue',   'Revenue mix',        'Boarding vs day care revenue split'],
+  ['occupancy', 'Occupancy',          '% of capacity booked over next 14 days'],
+  ['volume',    'Monthly volume',     'Completed visits per month'],
+  ['breeds',    'Breeds & regulars',  'Top breeds and repeat customers'],
+  ['los',       'Length of stay',     'Average nights per boarding stay'],
+  ['revpak',    'Revenue / kennel',   'Avg revenue per available kennel-night'],
+  ['retention', 'New vs returning',   'Share of stays from returning customers'],
+  ['dow',       'Day-of-week demand', 'Which weekdays are busiest']
+];
+
+function trendEnabled(key){
+  const t = (typeof settings!=='undefined' && settings.trendsEnabled) ? settings.trendsEnabled : null;
+  if(!t) return true; // default: all on until the owner customizes
+  return t[key] !== false;
+}
+
+function enabledTrends(){ return TREND_CATALOG.filter(t=>trendEnabled(t[0])); }
 
 function setTrendView(v){ trendView = v; renderTrends(); }
 
@@ -325,17 +345,17 @@ function renderTrends(){
   const host = document.getElementById('dash-trends');
   if(!host) return;
 
-  const tabs = [
-    ['revenue','Revenue mix'],
-    ['occupancy','Occupancy'],
-    ['volume','Monthly volume'],
-    ['breeds','Breeds & regulars']
-  ];
+  const avail = enabledTrends();
+  if(!avail.length){ host.innerHTML=''; return; } // all disabled -> hide section
+
+  // default selection / repair if current selection got disabled
+  if(!trendView || !avail.some(t=>t[0]===trendView)) trendView = avail[0][0];
+
   let html = '<div class="card"><div class="ct">📊 Trends</div>';
   html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">';
-  tabs.forEach(([key,label])=>{
+  avail.forEach(([key,label])=>{
     const on = trendView===key;
-    html += '<button class="btn '+(on?'btn-p':'btn-o')+' sm" style="font-size:11px" onclick="setTrendView(\''+key+'\')">'+label+'</button>';
+    html += '<button class="btn '+(on?'btn-p':'btn-o')+' sm" style="font-size:11px" onclick="setTrendView(\''+key+'\')">'+esc(label)+'</button>';
   });
   html += '</div>';
   html += '<div>'+trendBody()+'</div>';
@@ -349,11 +369,15 @@ function trendBar(label, value, max, valueLabel, color){
   return '<div style="margin-bottom:10px">'
     + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'
     + '<span style="color:var(--ink)">'+esc(label)+'</span>'
-    + '<span style="color:var(--ink-faint);font-weight:600">'+valueLabel+'</span>'
+    + '<span style="color:var(--ink-faint);font-weight:600">'+esc(valueLabel)+'</span>'
     + '</div>'
     + '<div style="height:8px;background:var(--cream-mid);border-radius:5px;overflow:hidden">'
     + '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:5px"></div>'
     + '</div></div>';
+}
+
+function trendStat(big, sub){
+  return '<div style="text-align:center;padding:14px 0"><div style="font-family:\'DM Serif Display\',serif;font-size:34px;color:var(--ink);line-height:1.1">'+esc(big)+'</div><div style="font-size:12px;color:var(--ink-faint);margin-top:4px">'+esc(sub)+'</div></div>';
 }
 
 function trendBody(){
@@ -376,11 +400,9 @@ function trendBody(){
   if(trendView==='occupancy'){
     const cap = (typeof settings!=='undefined' && settings.capacity) ? settings.capacity : 12;
     const today=new Date(); today.setHours(0,0,0,0);
-    let rows='';
-    let any=false;
+    let rows=''; let any=false;
     for(let i=0;i<14;i++){
       const day=new Date(today); day.setDate(day.getDate()+i);
-      const ds=day.toISOString().split('T')[0];
       const dayStart=new Date(day); dayStart.setHours(0,0,0,0);
       const dayEnd=new Date(day); dayEnd.setHours(23,59,59,999);
       let count=0;
@@ -404,38 +426,83 @@ function trendBody(){
     bk.forEach(b=>{ const d=new Date(b.saved_at||b.checkin); if(isNaN(d)) return; const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); months[key]=(months[key]||0)+1; });
     const keys=Object.keys(months).sort().slice(-6);
     if(!keys.length) return empty;
-    const max=Math.max(...keys.map(k=>months[k]));
+    const max=Math.max.apply(null,keys.map(k=>months[k]));
     return keys.map(k=>{
-      const [y,m]=k.split('-');
-      const lbl=new Date(+y,+m-1,1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+      const parts=k.split('-');
+      const lbl=new Date(+parts[0],+parts[1]-1,1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
       return trendBar(lbl, months[k], max, months[k]+' visit'+(months[k]!==1?'s':''), 'var(--brown)');
     }).join('');
   }
 
   if(trendView==='breeds'){
-    // Top breeds
     const breeds={};
     dg.forEach(d=>{ const b=(d.breed||'').trim()||'Unknown'; breeds[b]=(breeds[b]||0)+1; });
     const topBreeds=Object.entries(breeds).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    // Repeat customers: owners with >1 completed booking entry
     const ownerCounts={};
     bk.forEach(b=>{ (b.entries||[]).forEach(e=>{ const o=(e.ownerName||'').trim(); if(o) ownerCounts[o]=(ownerCounts[o]||0)+1; }); });
-    const repeats=Object.entries(ownerCounts).filter(([,n])=>n>1).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const repeats=Object.entries(ownerCounts).filter(e=>e[1]>1).sort((a,b)=>b[1]-a[1]).slice(0,5);
     if(!topBreeds.length && !repeats.length) return empty;
     let out='';
     if(topBreeds.length){
       const max=topBreeds[0][1];
       out += '<div style="font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Top breeds</div>';
-      out += topBreeds.map(([b,n])=>trendBar(b, n, max, n+' dog'+(n!==1?'s':''), 'var(--brown)')).join('');
+      out += topBreeds.map(e=>trendBar(e[0], e[1], max, e[1]+' dog'+(e[1]!==1?'s':''), 'var(--brown)')).join('');
     }
     if(repeats.length){
       const max=repeats[0][1];
       out += '<div style="font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">Repeat customers</div>';
-      out += repeats.map(([o,n])=>trendBar(o, n, max, n+' stays', 'var(--gold)')).join('');
+      out += repeats.map(e=>trendBar(e[0], e[1], max, e[1]+' stays', 'var(--gold)')).join('');
     } else {
       out += '<div style="margin-top:12px;font-size:12px;color:var(--ink-faint)">No repeat customers yet.</div>';
     }
     return out;
+  }
+
+  if(trendView==='los'){
+    // Average length of stay (nights) for boarding bookings
+    let totalNights=0, n=0;
+    bk.forEach(b=>{ if(b.service==='daycare') return; const ci=new Date(b.checkin), co=new Date(b.checkout); if(isNaN(ci)||isNaN(co)) return; const nights=Math.max(1,Math.round((co-ci)/86400000)); totalNights+=nights; n++; });
+    if(!n) return empty;
+    const avg=(totalNights/n).toFixed(1);
+    return trendStat(avg+' nights', 'Average boarding stay · across '+n+' completed stay'+(n!==1?'s':''));
+  }
+
+  if(trendView==='revpak'){
+    // Revenue per available kennel-night (RevPAK): total boarding revenue / (capacity * days in window)
+    const cap = (typeof settings!=='undefined' && settings.capacity) ? settings.capacity : 12;
+    let rev=0, minD=null, maxD=null;
+    bk.forEach(b=>{ const amt=parseFloat(b.grand_total)||0; rev+=amt; const d=new Date(b.saved_at||b.checkin); if(!isNaN(d)){ if(!minD||d<minD)minD=d; if(!maxD||d>maxD)maxD=d; } });
+    if(rev<=0||!minD) return empty;
+    const days=Math.max(1,Math.round((maxD-minD)/86400000)+1);
+    const revpak=rev/(cap*days);
+    return trendStat('$'+revpak.toFixed(2), 'Per kennel-night available · '+cap+' kennels over '+days+' day'+(days!==1?'s':''))
+      + '<div style="font-size:11px;color:var(--ink-faint);text-align:center;margin-top:-6px">Higher = better use of capacity</div>';
+  }
+
+  if(trendView==='retention'){
+    // New vs returning: for each booking entry, was that owner seen in an earlier booking?
+    const seen={}; let nw=0, ret=0;
+    const ordered=bk.slice().sort((a,b)=>new Date(a.saved_at||a.checkin)-new Date(b.saved_at||b.checkin));
+    ordered.forEach(b=>{ (b.entries||[]).forEach(e=>{ const o=(e.ownerName||'').trim().toLowerCase(); if(!o) return; if(seen[o]) ret++; else { nw++; seen[o]=true; } }); });
+    const total=nw+ret;
+    if(!total) return empty;
+    const max=Math.max(nw,ret);
+    return trendBar('🆕 New customers', nw, max, nw+' · '+Math.round(nw/total*100)+'%', 'var(--forest)')
+      + trendBar('🔁 Returning', ret, max, ret+' · '+Math.round(ret/total*100)+'%', 'var(--gold)')
+      + '<div style="font-size:11px;color:var(--ink-faint);text-align:center;margin-top:6px">Higher returning share = stronger loyalty</div>';
+  }
+
+  if(trendView==='dow'){
+    // Day-of-week demand: count check-ins by weekday
+    const dows=[0,0,0,0,0,0,0]; const names=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    bk.forEach(b=>{ const d=new Date(b.checkin); if(!isNaN(d)) dows[d.getDay()]++; });
+    rq.filter(r=>r.status==='confirmed'||r.status==='checked_in').forEach(r=>{ const d=new Date(r.actual_checkin||r.checkin); if(!isNaN(d)) dows[d.getDay()]++; });
+    const total=dows.reduce((a,b)=>a+b,0);
+    if(!total) return empty;
+    const max=Math.max.apply(null,dows);
+    // Reorder Mon..Sun for readability
+    const order=[1,2,3,4,5,6,0];
+    return order.map(i=>trendBar(names[i], dows[i], max, String(dows[i]), i===0||i===6?'var(--gold)':'var(--brown)')).join('');
   }
 
   return empty;

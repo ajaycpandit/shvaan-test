@@ -237,13 +237,33 @@ async function saveCio(){
         setSyncState('err'); console.error('Booking insert failed:', insErr);
         toast('Could not save booking: '+insErr.message, true); return;
       }
-      bookings.unshift(booking);
+      // Persist the reservation as completed. Try full payload first; if the schema
+      // rejects an optional column, fall back to status-only so it still completes.
+      const fullPayload={status:'completed', actual_checkin:inDt.toISOString(), actual_checkout:stamp.toISOString(), final_total:disc.total, booking_id:booking.id};
+      let statusSaved=false;
       try {
-        await dbUpdReq(r.id,{status:'completed', actual_checkin:inDt.toISOString(), actual_checkout:stamp.toISOString(), final_total:disc.total, booking_id:booking.id});
-      } catch(updErr) { console.warn('Reservation status update failed (non-fatal):', updErr); }
+        await dbUpdReq(r.id, fullPayload);
+        statusSaved=true;
+      } catch(updErr) {
+        console.warn('Full reservation update failed, retrying status-only:', updErr);
+        try {
+          await dbUpdReq(r.id, {status:'completed'});
+          statusSaved=true;
+          toast('Checked out, but some details (final price/booking link) could not be saved to this reservation. The invoice itself is saved.', true);
+        } catch(statusErr) {
+          // Could not even mark completed — roll back the booking to avoid an orphan invoice
+          console.error('Status-only update also failed, rolling back booking:', statusErr);
+          try { await dbDeleteBooking(booking.id); } catch(_){}
+          bookings = bookings.filter(b=>b.id!==booking.id);
+          setSyncState('err');
+          toast('Checkout could not be saved: '+statusErr.message+'. Nothing was changed — please try again.', true);
+          return;
+        }
+      }
+      bookings.unshift(booking);
       r.status='completed'; r.actual_checkin=inDt.toISOString(); r.actual_checkout=stamp.toISOString(); r.final_total=disc.total; r.booking_id=booking.id;
       setSyncState('ok'); closeCio(); renderRequests(); updateBadges(); refreshActive();
-      toast('Checked out! Final: $'+disc.total.toFixed(2));
+      if(statusSaved) toast('Checked out! Final: $'+disc.total.toFixed(2));
       try { openInv(booking.id); } catch(invErr) { console.warn('Invoice open failed:', invErr); }
     }
   }catch(e){ setSyncState('err'); console.error('Checkout error:',e); toast('Error: '+e.message, true); }

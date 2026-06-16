@@ -49,12 +49,39 @@ function renderSettings() {
   // Team management — admin only
   const tc=document.getElementById('team-card');
   if(tc){ if(isAdmin()){ tc.style.display=''; renderTeamList(); tmRenderPerms(); tmRoleChange(); } else { tc.style.display='none'; } }
+  if(typeof renderTrendToggles==='function') renderTrendToggles();
+}
+
+// Dashboard trend enable/disable toggles
+function renderTrendToggles(){
+  const host=document.getElementById('settings-trends');
+  if(!host || typeof TREND_CATALOG==='undefined') return;
+  const enabled=(settings && settings.trendsEnabled) ? settings.trendsEnabled : {};
+  host.innerHTML = TREND_CATALOG.map(function(t){
+    const key=t[0], label=t[1], desc=t[2];
+    const on = enabled[key] !== false;
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--cream-mid)">'
+      + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">'+esc(label)+'</div><div style="font-size:11px;color:var(--ink-faint)">'+esc(desc)+'</div></div>'
+      + '<label class="switch" style="position:relative;display:inline-block;width:42px;height:24px;flex:none">'
+      + '<input type="checkbox" '+(on?'checked':'')+' onchange="toggleTrend(\''+key+'\',this.checked)" style="opacity:0;width:0;height:0">'
+      + '<span style="position:absolute;cursor:pointer;inset:0;background:'+(on?'var(--brown)':'var(--cream-dark)')+';border-radius:24px;transition:.2s"><span style="position:absolute;height:18px;width:18px;left:'+(on?'21px':'3px')+';top:3px;background:#fff;border-radius:50%;transition:.2s"></span></span>'
+      + '</label></div>';
+  }).join('');
+}
+
+async function toggleTrend(key, on){
+  if(!settings.trendsEnabled) settings.trendsEnabled={};
+  settings.trendsEnabled[key]=on;
+  renderTrendToggles();
+  setSyncState('busy');
+  try{ await dbSaveSettings(settings); setSyncState('ok'); }
+  catch(e){ setSyncState('err'); }
 }
 
 function changeSurcharge(type){
   if(settings){
     settings.surchargeType = type;
-    if(typeof dbUpdSet === 'function') dbUpdSet({surchargeType: type});
+    dbSaveSettings(settings).catch(function(){});
     renderSettings();
   }
 }
@@ -64,7 +91,7 @@ function updateSurcharge(val){
     const num = parseFloat(val) || 0;
     const key = settings.surchargeType === 'percent' ? 'surchargePct' : 'surchargeAmt';
     settings[key] = num;
-    if(typeof dbUpdSet === 'function') dbUpdSet({[key]: num});
+    dbSaveSettings(settings).catch(function(){});
   }
 }
 
@@ -219,7 +246,8 @@ async function saveSettings() {
     bizAddr:document.getElementById('s-ba').value.trim(),
     capacity:parseInt(document.getElementById('s-cap').value)||DEF.capacity,
     logo: pendingLogo==='__default__' ? null : (pendingLogo || settings.logo || null),
-    theme: settings.theme || 'terracotta'
+    theme: settings.theme || 'terracotta',
+    trendsEnabled: settings.trendsEnabled || {}
   };
   setSyncState('busy');
   try { await dbSaveSettings(settings); try{ if(settings.logo) localStorage.setItem('shvaan_logo', settings.logo); else localStorage.removeItem('shvaan_logo'); }catch(e){} pendingLogo=null; applyLogo(); setSyncState('ok'); toast('Settings saved!'); recalc(); }

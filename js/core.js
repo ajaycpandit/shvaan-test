@@ -77,7 +77,7 @@ async function dbSaveSettings(data) {
 /* REQUESTS */
 async function dbGetReqs(){ return await sbFetch('requests?order=created_at.desc').catch(()=>[]) || []; }
 async function dbAddReq(r){ return await sbFetch('requests','POST',r).catch(()=>null); }
-async function dbUpdReq(id,d){ return await sbFetch('requests?id=eq.'+encodeURIComponent(id),'PATCH',d).catch(()=>null); }
+async function dbUpdReq(id,d){ return await sbFetch('requests?id=eq.'+encodeURIComponent(id),'PATCH',d); }
 async function dbDelReq(id){ return await sbFetch('requests?id=eq.'+encodeURIComponent(id),'DELETE').catch(()=>null); }
 
 /* VACC FILE UPLOAD (Supabase Storage) */
