@@ -149,19 +149,65 @@ let teamProfiles=[];
 async function renderTeamList(){
   const el=document.getElementById('team-list'); if(!el) return;
   try{ teamProfiles=await dbGetProfiles(); }catch(e){ teamProfiles=[]; }
+  // Populate quick-pick (edit existing) dropdown
+  const qp=document.getElementById('tm-quickpick');
+  if(qp){
+    qp.innerHTML='<option value="">✏️ Edit existing…</option>'+teamProfiles.map(p=>`<option value="${esc(p.email)}">${esc(p.email)} (${esc(p.role)})</option>`).join('');
+  }
+  // Populate owner-name dropdown from existing dogs (unique, sorted)
+  const os=document.getElementById('tm-owner-select');
+  if(os && typeof dogs!=='undefined'){
+    const owners=[...new Set(dogs.map(d=>(d.owner_name||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    os.innerHTML='<option value="">— Pick from existing owners —</option>'+owners.map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join('');
+  }
+  // Count
+  const cnt=document.getElementById('team-count');
+  if(cnt) cnt.textContent = teamProfiles.length ? '('+teamProfiles.length+')' : '';
+
   if(!teamProfiles.length){ el.innerHTML='<div style="font-size:12px;color:var(--ink-faint);padding:4px 0 8px">No team members configured yet. Anyone who logs in without a profile is treated as admin (first-run). Add people below to assign roles.</div>'; return; }
-  el.innerHTML='<div style="display:flex;flex-direction:column;gap:8px">'+teamProfiles.map(p=>{
+  el.innerHTML='<div id="team-rows" style="display:flex;flex-direction:column;gap:8px">'+teamProfiles.map(p=>{
     const roleColor={admin:'var(--coral)',staff:'var(--blue)',customer:'var(--forest)'}[p.role]||'var(--ink-light)';
     let detail='';
     if(p.role==='staff'){ const perms=p.permissions||{}; const on=SECTIONS.filter(s=>(s in perms)?perms[s]:(s!=='finance'&&s!=='settings')); detail='Can see: '+(on.length?on.join(', '):'nothing'); }
     else if(p.role==='customer'){ detail='Owner: '+(p.owner_name||'—'); }
     else detail='Full access';
-    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--cream-dark);border-radius:var(--r2);background:var(--cream-mid)">
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(p.email)} <span style="font-size:11px;font-weight:600;color:${roleColor};text-transform:capitalize">· ${esc(p.role)}</span></div><div style="font-size:11px;color:var(--ink-faint);margin-top:1px">${esc(detail)}</div></div>
+    const hay=(p.email+' '+p.role+' '+(p.owner_name||'')).toLowerCase();
+    return `<div class="team-row" data-search="${esc(hay)}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--cream-dark);border-radius:var(--r2);background:var(--cream-mid)">
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.email)} <span style="font-size:11px;font-weight:600;color:${roleColor};text-transform:capitalize">· ${esc(p.role)}</span></div><div style="font-size:11px;color:var(--ink-faint);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(detail)}</div></div>
       <button class="btn btn-o sm" onclick="tmEdit('${esc(p.email).replace(/'/g,"\\'")}')">Edit</button>
       <button class="btn btn-d sm" onclick="tmDelete('${esc(p.email).replace(/'/g,"\\'")}')">×</button>
     </div>`;
-  }).join('')+'</div>';
+  }).join('')+'</div><div id="team-noresults" style="display:none;font-size:12px;color:var(--ink-faint);padding:8px 0">No matches.</div>';
+}
+
+function filterTeamList(){
+  const q=(document.getElementById('team-search').value||'').toLowerCase().trim();
+  const rows=document.querySelectorAll('.team-row');
+  let shown=0;
+  rows.forEach(r=>{ const match=!q||r.getAttribute('data-search').includes(q); r.style.display=match?'':'none'; if(match) shown++; });
+  const nr=document.getElementById('team-noresults');
+  if(nr) nr.style.display = (rows.length&&shown===0)?'block':'none';
+}
+
+function tmQuickPick(email){
+  if(!email) return;
+  tmEdit(email);
+  const qp=document.getElementById('tm-quickpick'); if(qp) qp.value='';
+}
+
+function tmClearForm(){
+  document.getElementById('tm-email').value='';
+  document.getElementById('tm-email').removeAttribute('readonly');
+  document.getElementById('tm-role').value='staff';
+  document.getElementById('tm-owner').value='';
+  const os=document.getElementById('tm-owner-select'); if(os) os.value='';
+  const t=document.getElementById('tm-form-title'); if(t) t.textContent='Add a person';
+  tmRenderPerms(); tmRoleChange();
+  const res=document.getElementById('tm-result'); if(res) res.style.display='none';
+}
+
+function tmOwnerPick(name){
+  if(name) document.getElementById('tm-owner').value=name;
 }
 function tmRoleChange(){
   const role=document.getElementById('tm-role').value;
@@ -181,9 +227,11 @@ function tmEdit(email){
   document.getElementById('tm-email').value=p.email;
   document.getElementById('tm-role').value=p.role;
   document.getElementById('tm-owner').value=p.owner_name||'';
+  const os=document.getElementById('tm-owner-select'); if(os) os.value=p.owner_name||'';
+  const t=document.getElementById('tm-form-title'); if(t) t.textContent='Editing '+p.email;
   tmRenderPerms(p.permissions||{});
   tmRoleChange();
-  document.getElementById('tm-email').scrollIntoView({behavior:'smooth',block:'center'});
+  document.getElementById('tm-form-title').scrollIntoView({behavior:'smooth',block:'center'});
 }
 async function saveTeamMember(){
   const email=document.getElementById('tm-email').value.trim().toLowerCase();
@@ -199,6 +247,8 @@ async function saveTeamMember(){
     setSyncState('ok');
     res.style.display='block'; res.style.color='var(--forest)'; res.textContent='✓ Saved '+email+'.';
     document.getElementById('tm-email').value=''; document.getElementById('tm-owner').value='';
+    const os=document.getElementById('tm-owner-select'); if(os) os.value='';
+    const t=document.getElementById('tm-form-title'); if(t) t.textContent='Add a person';
     renderTeamList(); tmRenderPerms();
   }catch(e){ setSyncState('err'); res.style.display='block'; res.style.color='var(--danger)'; res.textContent='⚠️ '+e.message+' (is the profiles table created?)'; }
 }
