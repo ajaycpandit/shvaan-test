@@ -103,6 +103,7 @@ function renderDashboard(){
   // Render three features
   if(typeof renderCurrentlyBoarding === 'function') renderCurrentlyBoarding();
   if(typeof renderDayNavigation === 'function') renderDayNavigation();
+  if(typeof renderTrends === 'function') renderTrends();
 }
 
 /* ── Right panel ──────────────────────────────────────────── */
@@ -151,140 +152,291 @@ function renderRightPanel() {
 ═══════════════════════════════════════ */
 
 // FEATURE 1: Currently Boarding Dogs
+
+/* ═══════════════════════════════════════
+   DASHBOARD: Currently Boarding + Quick Check-in + Day Navigation
+═══════════════════════════════════════ */
+
+// Currently Boarding — only dogs whose status is checked_in right now
 function renderCurrentlyBoarding(){
-  const now = new Date();
   const cb = document.getElementById('dash-currently-boarding');
   if(!cb) return;
-  
-  // Get dogs that are checked_in and haven't checked out yet
-  const current = requests.filter(r => {
+  const now = new Date();
+
+  const current = (typeof requests!=='undefined'?requests:[]).filter(r => {
     if(r.status !== 'checked_in') return false;
-    const ci = new Date(r.actual_checkin || r.checkin);
     const co = new Date(r.checkout);
-    return ci <= now && co >= now;
-  });
-  
+    return co >= now || isNaN(co);  // still here if checkout in future (or unknown)
+  }).sort((a,b)=> new Date(a.actual_checkin||a.checkin) - new Date(b.actual_checkin||b.checkin));
+
   if(current.length === 0){
-    cb.innerHTML = `<div class="card"><div class="es"><span class="ei">🏠</span><p>No dogs currently boarding</p></div></div>`;
+    cb.innerHTML = '<div class="card"><div class="ct">🏠 Currently Boarding</div><div class="es"><span class="ei">🏠</span><p>No dogs currently boarding</p></div></div>';
     return;
   }
-  
+
   let html = '<div class="card"><div class="ct">🏠 Currently Boarding</div>';
   current.forEach(r => {
-    const coDate = new Date(r.checkout).toLocaleDateString('en-US', {month:'short', day:'numeric'});
-    const coTime = new Date(r.checkout).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
-    html += `
-      <div style="display:flex;align-items:center;gap:11px;padding:11px;background:var(--cream-mid);border-radius:8px;margin-bottom:8px">
-        <div style="font-size:18px">${r.service==='boarding'?'🏡':'☀️'}</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600">${r.dog_name}</div>
-          <div style="font-size:11px;color:var(--ink-faint)">Checks out ${coDate} at ${coTime}</div>
-        </div>
-        <button class="btn btn-p sm" onclick="quickCheckIn('${r.id}')" style="font-size:11px">✓ Log</button>
-      </div>
-    `;
+    const co = new Date(r.checkout);
+    const coStr = isNaN(co) ? 'open' : (co.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' at ' + co.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}));
+    html += '<div style="display:flex;align-items:center;gap:11px;padding:11px;background:var(--cream-mid);border-radius:8px;margin-bottom:8px">'
+      + '<div style="font-size:18px">' + (r.service==='boarding'?'🏡':'☀️') + '</div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13px;font-weight:600">' + esc(r.dog_name||'') + '</div>'
+      + '<div style="font-size:11px;color:var(--ink-faint)">Checks out ' + coStr + '</div>'
+      + '</div>'
+      + '<button class="btn btn-g sm" style="font-size:11px" onclick="openCheckOut(\'' + r.id + '\')">Check Out</button>'
+      + '</div>';
   });
   html += '</div>';
   cb.innerHTML = html;
 }
 
-function quickCheckIn(requestId){
-  const req = requests.find(r => r.id === requestId);
-  if(!req) { alert('Request not found'); return; }
-  
-  if(!confirm(`Log check-in for ${req.dog_name}?`)) return;
-  
+// Quick Check-in — real status transition for a confirmed/pending reservation
+async function quickCheckIn(requestId){
+  const req = (typeof requests!=='undefined'?requests:[]).find(r => r.id === requestId);
+  if(!req){ toast('Reservation not found.', true); return; }
+  if(req.status === 'checked_in'){ toast(req.dog_name+' is already checked in.'); return; }
+  if(req.status === 'completed'){ toast(req.dog_name+' is already checked out.', true); return; }
+  if(!confirm('Check in '+req.dog_name+' now?')) return;
+
   const now = new Date().toISOString();
-  req.actual_checkin = now;
-  
-  // Update in database
-  if(typeof dbUpdReq === 'function'){
-    dbUpdReq(req.id, {actual_checkin: now});
+  setSyncState('busy');
+  try{
+    await dbUpdReq(req.id, {status:'checked_in', actual_checkin: now});
+    req.status = 'checked_in';
+    req.actual_checkin = now;
+    setSyncState('ok');
+    toast('✓ '+req.dog_name+' checked in.');
+    if(typeof updateBadges==='function') updateBadges();
+    if(typeof renderDashboard==='function') renderDashboard();
+  }catch(e){
+    setSyncState('err');
+    toast('Error: '+e.message, true);
   }
-  
-  alert(`✓ Checked in ${req.dog_name} at ${new Date(now).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}`);
-  renderCurrentlyBoarding();
 }
 
-// FEATURE 2: Surcharge Settings - PROPER RADIO BUTTONS
+// Undo a mistaken checkout — revert completed → checked_in, remove the premature invoice/booking,
+// but keep the reservation's check-in data intact.
+async function undoCheckout(requestId){
+  const req = (typeof requests!=='undefined'?requests:[]).find(r => r.id === requestId);
+  if(!req){ toast('Reservation not found.', true); return; }
+  if(req.status !== 'completed'){ toast('This reservation is not checked out.', true); return; }
+  if(!confirm('Undo checkout for '+req.dog_name+'?\n\nThis reverts them to "checked in" and removes the invoice that checkout generated. Their check-in details are kept.')) return;
 
+  setSyncState('busy');
+  try{
+    const bookingId = req.booking_id;
+    // Remove the premature booking/invoice if one was created
+    if(bookingId){
+      try { await dbDeleteBooking(bookingId); } catch(delErr){ console.warn('Booking delete failed (continuing):', delErr); }
+      if(typeof bookings!=='undefined') bookings = bookings.filter(b=> b.id !== bookingId);
+    }
+    // Revert reservation status; keep actual_checkin, clear checkout-side fields
+    await dbUpdReq(req.id, {status:'checked_in', actual_checkout:null, final_total:null, booking_id:null});
+    req.status = 'checked_in';
+    req.actual_checkout = null;
+    req.final_total = null;
+    req.booking_id = null;
+    setSyncState('ok');
+    toast('✓ Checkout undone — '+req.dog_name+' is boarding again.');
+    if(typeof updateBadges==='function') updateBadges();
+    if(typeof renderDashboard==='function') renderDashboard();
+    if(typeof renderRequests==='function') renderRequests();
+  }catch(e){
+    setSyncState('err');
+    toast('Error: '+e.message, true);
+  }
+}
 
-
-// FEATURE 3: Day Navigation
+// Day Navigation — shows arrivals, departures, and dogs whose stay overlaps the day
 let browseDate = new Date();
 
 function renderDayNavigation(){
-  const dayStart = new Date(browseDate);
-  dayStart.setHours(0,0,0,0);
-  const dayEnd = new Date(browseDate);
-  dayEnd.setHours(23,59,59,999);
-  const now = new Date();
-  
-  // Get all requests (upcoming + currently there) for this day
-  const dayRequests = requests.filter(r => {
-    const ci = new Date(r.checkin);
-    const co = new Date(r.checkout);
-    // Overlaps with this day
-    return (ci <= dayEnd && co >= dayStart);
-  }).sort((a,b) => new Date(a.checkin) - new Date(b.checkin));
-  
-  const dateStr = browseDate.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
+  const navDiv = document.getElementById('dash-day-nav');
+  if(!navDiv) return;
+
+  const dayStart = new Date(browseDate); dayStart.setHours(0,0,0,0);
+  const dayEnd   = new Date(browseDate); dayEnd.setHours(23,59,59,999);
+
+  const list = (typeof requests!=='undefined'?requests:[]).filter(r => {
+    if(r.status === 'declined') return false;
+    const ci = new Date(r.actual_checkin || r.checkin);
+    const co = new Date(r.actual_checkout || r.checkout);
+    if(isNaN(ci)) return false;
+    return (ci <= dayEnd && (isNaN(co) ? true : co >= dayStart)); // overlaps the day
+  }).sort((a,b)=> new Date(a.actual_checkin||a.checkin) - new Date(b.actual_checkin||b.checkin));
+
+  const dateStr = browseDate.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
   const isToday = browseDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
-  
-  let html = `
-    <div class="card">
-      <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
-        <span>📅 ${dateStr}${isToday?' (Today)':''}</span>
-        <div style="display:flex;gap:6px">
-          <button class="btn btn-o sm" onclick="prevDay()" style="padding:6px 12px">← Prev</button>
-          <button class="btn btn-o sm" onclick="todayDay()" style="padding:6px 12px">Today</button>
-          <button class="btn btn-o sm" onclick="nextDay()" style="padding:6px 12px">Next →</button>
-        </div>
-      </div>
-  `;
-  
-  if(dayRequests.length === 0){
+
+  let html = '<div class="card"><div class="ct" style="display:flex;justify-content:space-between;align-items:center">'
+    + '<span>📅 ' + dateStr + (isToday?' (Today)':'') + '</span>'
+    + '<div style="display:flex;gap:6px">'
+    + '<button class="btn btn-o sm" style="padding:6px 12px" onclick="prevDay()">←</button>'
+    + '<button class="btn btn-o sm" style="padding:6px 12px" onclick="todayDay()">Today</button>'
+    + '<button class="btn btn-o sm" style="padding:6px 12px" onclick="nextDay()">→</button>'
+    + '</div></div>';
+
+  if(list.length === 0){
     html += '<div style="padding:14px;text-align:center;color:var(--ink-faint)">No dogs for this day</div>';
   } else {
-    dayRequests.forEach(r => {
-      const ciTime = new Date(r.checkin).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
-      const status = r.status === 'checked_in' ? 'Currently here' : 'Arriving';
-      html += `
-        <div style="padding:11px;border-bottom:1px solid var(--cream-mid);display:flex;align-items:center;gap:10px">
-          <div style="font-size:16px">${r.service==='boarding'?'🏡':'☀️'}</div>
-          <div style="flex:1">
-            <div style="font-weight:600;font-size:13px">${r.dog_name}</div>
-            <div style="font-size:11px;color:var(--ink-faint)">${status} at ${ciTime}</div>
-          </div>
-          <button class="btn btn-p sm" onclick="openReq('${r.id}')" style="font-size:11px">Open</button>
-        </div>
-      `;
+    list.forEach(r => {
+      const ci = new Date(r.actual_checkin || r.checkin);
+      const ciTime = ci.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      let label, color;
+      if(r.status === 'checked_in'){ label = 'Currently boarding · since ' + ciTime; color = 'var(--forest)'; }
+      else if(r.status === 'completed'){ label = 'Checked out'; color = 'var(--ink-faint)'; }
+      else if(r.status === 'confirmed'){ label = 'Arriving ' + ciTime; color = 'var(--bluep-text,var(--ink-mid))'; }
+      else { label = 'Requested · ' + ciTime; color = 'var(--ink-faint)'; }
+
+      html += '<div style="padding:11px;border-bottom:1px solid var(--cream-mid);display:flex;align-items:center;gap:10px">'
+        + '<div style="font-size:16px">' + (r.service==='boarding'?'🏡':'☀️') + '</div>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-weight:600;font-size:13px">' + esc(r.dog_name||'') + '</div>'
+        + '<div style="font-size:11px;color:'+color+'">' + label + '</div>'
+        + '</div>';
+      if(r.status === 'confirmed' || r.status === 'pending'){
+        html += '<button class="btn btn-b sm" style="font-size:11px" onclick="quickCheckIn(\''+r.id+'\')">Check In</button>';
+      } else if(r.status === 'checked_in'){
+        html += '<button class="btn btn-g sm" style="font-size:11px" onclick="openCheckOut(\''+r.id+'\')">Check Out</button>';
+      } else {
+        html += '<button class="btn btn-o sm" style="font-size:11px" onclick="goPage(\'requests\')">View</button>';
+      }
+      html += '</div>';
     });
   }
-  
+
   html += '</div>';
-  
-  const navDiv = document.getElementById('dash-day-nav');
-  if(navDiv) navDiv.innerHTML = html;
+  navDiv.innerHTML = html;
 }
 
-function prevDay(){
-  browseDate.setDate(browseDate.getDate() - 1);
-  renderDayNavigation();
+function prevDay(){ browseDate.setDate(browseDate.getDate()-1); renderDayNavigation(); }
+function nextDay(){ browseDate.setDate(browseDate.getDate()+1); renderDayNavigation(); }
+function todayDay(){ browseDate = new Date(); renderDayNavigation(); }
+
+/* ═══════════════════════════════════════
+   DASHBOARD: Trend perspectives (switchable)
+═══════════════════════════════════════ */
+let trendView = 'revenue';
+
+function setTrendView(v){ trendView = v; renderTrends(); }
+
+function renderTrends(){
+  const host = document.getElementById('dash-trends');
+  if(!host) return;
+
+  const tabs = [
+    ['revenue','Revenue mix'],
+    ['occupancy','Occupancy'],
+    ['volume','Monthly volume'],
+    ['breeds','Breeds & regulars']
+  ];
+  let html = '<div class="card"><div class="ct">📊 Trends</div>';
+  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">';
+  tabs.forEach(([key,label])=>{
+    const on = trendView===key;
+    html += '<button class="btn '+(on?'btn-p':'btn-o')+' sm" style="font-size:11px" onclick="setTrendView(\''+key+'\')">'+label+'</button>';
+  });
+  html += '</div>';
+  html += '<div>'+trendBody()+'</div>';
+  html += '</div>';
+  host.innerHTML = html;
 }
 
-function nextDay(){
-  browseDate.setDate(browseDate.getDate() + 1);
-  renderDayNavigation();
+function trendBar(label, value, max, valueLabel, color){
+  const pct = max>0 ? Math.round((value/max)*100) : 0;
+  color = color || 'var(--brown)';
+  return '<div style="margin-bottom:10px">'
+    + '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'
+    + '<span style="color:var(--ink)">'+esc(label)+'</span>'
+    + '<span style="color:var(--ink-faint);font-weight:600">'+valueLabel+'</span>'
+    + '</div>'
+    + '<div style="height:8px;background:var(--cream-mid);border-radius:5px;overflow:hidden">'
+    + '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:5px"></div>'
+    + '</div></div>';
 }
 
-function todayDay(){
-  browseDate = new Date();
-  renderDayNavigation();
+function trendBody(){
+  const bk = (typeof bookings!=='undefined'?bookings:[]);
+  const rq = (typeof requests!=='undefined'?requests:[]);
+  const dg = (typeof dogs!=='undefined'?dogs:[]);
+  const empty = '<div style="padding:10px 0;color:var(--ink-faint);font-size:13px">Not enough data yet.</div>';
+
+  if(trendView==='revenue'){
+    let boardRev=0, dayRev=0;
+    bk.forEach(b=>{ const amt=parseFloat(b.grand_total)||0; if(b.service==='daycare') dayRev+=amt; else boardRev+=amt; });
+    const total=boardRev+dayRev;
+    if(total<=0) return empty;
+    const max=Math.max(boardRev,dayRev);
+    return trendBar('🏡 Boarding', boardRev, max, '$'+boardRev.toFixed(0)+' · '+Math.round(boardRev/total*100)+'%', 'var(--brown)')
+      + trendBar('☀️ Day Care', dayRev, max, '$'+dayRev.toFixed(0)+' · '+Math.round(dayRev/total*100)+'%', 'var(--gold)')
+      + '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--cream-mid);display:flex;justify-content:space-between;font-size:13px"><span style="font-weight:600">Total billed</span><span style="font-weight:700">$'+total.toFixed(0)+'</span></div>';
+  }
+
+  if(trendView==='occupancy'){
+    const cap = (typeof settings!=='undefined' && settings.capacity) ? settings.capacity : 12;
+    const today=new Date(); today.setHours(0,0,0,0);
+    let rows='';
+    let any=false;
+    for(let i=0;i<14;i++){
+      const day=new Date(today); day.setDate(day.getDate()+i);
+      const ds=day.toISOString().split('T')[0];
+      const dayStart=new Date(day); dayStart.setHours(0,0,0,0);
+      const dayEnd=new Date(day); dayEnd.setHours(23,59,59,999);
+      let count=0;
+      rq.forEach(r=>{
+        if(r.status==='declined'||r.status==='completed'||r.status==='pending') return;
+        const ci=new Date(r.actual_checkin||r.checkin), co=new Date(r.checkout);
+        if(!isNaN(ci) && ci<=dayEnd && (isNaN(co)?true:co>=dayStart)){ count+= (r.dog_ids&&r.dog_ids.length)?r.dog_ids.length:1; }
+      });
+      if(count>0) any=true;
+      const lbl = i===0 ? 'Today' : day.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+      const pctNum = Math.round((count/cap)*100);
+      const color = pctNum>=90 ? 'var(--danger)' : pctNum>=70 ? 'var(--gold)' : 'var(--forest)';
+      rows += trendBar(lbl, count, cap, count+'/'+cap+' · '+pctNum+'%', color);
+    }
+    if(!any) return '<div style="padding:10px 0;color:var(--ink-faint);font-size:13px">No confirmed stays in the next 14 days.</div>';
+    return '<div style="font-size:11px;color:var(--ink-faint);margin-bottom:10px">Capacity '+cap+' spaces · next 14 days</div>'+rows;
+  }
+
+  if(trendView==='volume'){
+    const months={};
+    bk.forEach(b=>{ const d=new Date(b.saved_at||b.checkin); if(isNaN(d)) return; const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); months[key]=(months[key]||0)+1; });
+    const keys=Object.keys(months).sort().slice(-6);
+    if(!keys.length) return empty;
+    const max=Math.max(...keys.map(k=>months[k]));
+    return keys.map(k=>{
+      const [y,m]=k.split('-');
+      const lbl=new Date(+y,+m-1,1).toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+      return trendBar(lbl, months[k], max, months[k]+' visit'+(months[k]!==1?'s':''), 'var(--brown)');
+    }).join('');
+  }
+
+  if(trendView==='breeds'){
+    // Top breeds
+    const breeds={};
+    dg.forEach(d=>{ const b=(d.breed||'').trim()||'Unknown'; breeds[b]=(breeds[b]||0)+1; });
+    const topBreeds=Object.entries(breeds).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    // Repeat customers: owners with >1 completed booking entry
+    const ownerCounts={};
+    bk.forEach(b=>{ (b.entries||[]).forEach(e=>{ const o=(e.ownerName||'').trim(); if(o) ownerCounts[o]=(ownerCounts[o]||0)+1; }); });
+    const repeats=Object.entries(ownerCounts).filter(([,n])=>n>1).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    if(!topBreeds.length && !repeats.length) return empty;
+    let out='';
+    if(topBreeds.length){
+      const max=topBreeds[0][1];
+      out += '<div style="font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Top breeds</div>';
+      out += topBreeds.map(([b,n])=>trendBar(b, n, max, n+' dog'+(n!==1?'s':''), 'var(--brown)')).join('');
+    }
+    if(repeats.length){
+      const max=repeats[0][1];
+      out += '<div style="font-size:11px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px">Repeat customers</div>';
+      out += repeats.map(([o,n])=>trendBar(o, n, max, n+' stays', 'var(--gold)')).join('');
+    } else {
+      out += '<div style="margin-top:12px;font-size:12px;color:var(--ink-faint)">No repeat customers yet.</div>';
+    }
+    return out;
+  }
+
+  return empty;
 }
-
-// FIXED: Surcharge Settings Rendering
-
-
-
-

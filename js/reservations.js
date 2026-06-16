@@ -95,7 +95,7 @@ function renderRequests(){
     } else if(st==='checked_in'){
       actions=`<button class="btn btn-g sm" onclick="openCheckOut('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Check Out & Bill</button>`;
     } else if(st==='completed'){
-      actions=r.booking_id?`<button class="btn btn-g sm" onclick="openInv('${r.booking_id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>View Invoice</button>`:'';
+      actions=(r.booking_id?`<button class="btn btn-g sm" onclick="openInv('${r.booking_id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>View Invoice</button>`:'')+`<button class="btn btn-o sm" onclick="undoCheckout('${r.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>Undo Checkout</button>`;
     } else if(st==='declined'){
       actions=`<button class="btn btn-o sm" onclick="updateReq('${r.id}','pending')">Reset to Pending</button>`;
     }

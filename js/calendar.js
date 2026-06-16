@@ -43,13 +43,11 @@ function renderCalendar(){
   for(let d=1;d<=days;d++){
     const ds=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const de=em[ds]||[], isT=ds===todayS, hasE=de.length>0, show=de.slice(0,3), more=de.length-3;
-    html+=`<div class="cal-day${isT?' today':''}${hasE?' has-events':''}" onclick="openDayMo('${ds}')"><div class="cal-day-num">${d}</div>${show.map(e=>`<div class="cal-event ${e.type}">${esc(e.label)}</div>`).join('')}${more>0?`<div class="cal-event more">+${more} more</div>`:''}</div>`;
+    html+=`<div class="cal-day${isT?' today':''}${hasE?' has-events':''}" onclick="openDayMo('${ds}')" style="cursor:pointer"><div class="cal-day-num">${d}</div>${show.map(e=>`<div class="cal-event ${e.type}" style="cursor:pointer">${esc(e.label)}</div>`).join('')}${more>0?`<div class="cal-event more">+${more} more</div>`:''}</div>`;
   }
   const total=first+days, nextFill=total%7===0?0:7-(total%7);
-  for(let d=1;d<=nextFill;d++){ const nd=new Date(calYear,calMonth+1,d); html+=`<div class="cal-day other-month" onclick="openDayMo('${dStr(nd)}')"><div class="cal-day-num">${d}</div></div>`; }
+  for(let d=1;d<=nextFill;d++){ const nd=new Date(calYear,calMonth+1,d); html+=`<div class="cal-day other-month" onclick="openDayMo('${dStr(nd)}')" style="cursor:pointer"><div class="cal-day-num">${d}</div></div>`; }
   grid.innerHTML=html;
-  // Wire up calendar interactions (clickable dogs and dates)
-  if(typeof wireUpCalendarInteractions==='function') wireUpCalendarInteractions();
 }
 function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
 function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
@@ -131,25 +129,29 @@ function openDayMo(ds){
     const b=e.detail, entries=b.entries||[];
     const names=entries.length?entries.map(x=>x.dogName||'').join(', '):(b.dog_name||'');
     const owners=entries.length?entries.map(x=>x.ownerName||'').join(', '):'';
-    if(e.type==='stay'){ allDay.push({icon:'🛏️',kind:'Staying overnight',names,owners,color:'var(--bluep)'}); return; }
+    // Determine click target: requests (have status) -> reservation detail; bookings -> invoice
+    let act='';
+    if(b && b.status && b.id){ act="openEditReq('"+b.id+"');closeDayMo();"; }
+    else if(b && b.id && (entries.length||b.grand_total!=null)){ act="openInv('"+b.id+"');closeDayMo();"; }
+    if(e.type==='stay'){ allDay.push({icon:'🛏️',kind:'Staying overnight',names,owners,color:'var(--bluep)',act}); return; }
     if(e.type==='req'){ 
       // pending request: time from r.checkin
       const t=new Date(b.checkin); const h=t.getHours();
-      (timed[h]=timed[h]||[]).push({icon:'📩',kind:'Requested check-in',names,owners,time:t,color:'#F0EDFB'}); return;
+      (timed[h]=timed[h]||[]).push({icon:'📩',kind:'Requested check-in',names,owners,time:t,color:'#F0EDFB',act}); return;
     }
     // in / out: use the relevant timestamp
     let t;
     if(e.type==='in') t=new Date(b.actual_checkin||b.checkin);
     else t=new Date(b.checkout);
     const h=t.getHours();
-    (timed[h]=timed[h]||[]).push({icon:e.type==='in'?'🏡':'👋',kind:e.type==='in'?'Check-in':'Check-out',names,owners,time:t,color:e.type==='in'?'var(--forest-pale)':'var(--gold-pale)'});
+    (timed[h]=timed[h]||[]).push({icon:e.type==='in'?'🏡':'👋',kind:e.type==='in'?'Check-in':'Check-out',names,owners,time:t,color:e.type==='in'?'var(--forest-pale)':'var(--gold-pale)',act});
   });
   // hour range: 6..21 default, expand to include any timed events
   let minH=6, maxH=21;
   Object.keys(timed).forEach(h=>{ h=+h; if(h<minH)minH=h; if(h>maxH)maxH=h; });
   let html='';
   if(allDay.length){
-    html+='<div style="margin-bottom:14px">'+allDay.map(a=>`<div style="background:${a.color};border-radius:var(--radius-md);padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="font-size:15px">${a.icon}</span><div><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(a.names)}</div><div style="font-size:11px;color:var(--ink-faint)">${a.kind}${a.owners?' · '+esc(a.owners):''}</div></div></div>`).join('')+'</div>';
+    html+='<div style="margin-bottom:14px">'+allDay.map(a=>`<div ${a.act?`onclick="${a.act}" style="cursor:pointer;`:'style="'}background:${a.color};border-radius:var(--radius-md);padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px"><span style="font-size:15px">${a.icon}</span><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(a.names)}</div><div style="font-size:11px;color:var(--ink-faint)">${a.kind}${a.owners?' · '+esc(a.owners):''}</div></div>${a.act?'<span style="font-size:11px;color:var(--ink-faint)">View ›</span>':''}</div>`).join('')+'</div>';
   }
   html+='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:8px">Hourly Schedule</div>';
   html+='<div style="border:1px solid var(--cream-dark);border-radius:var(--radius-md);overflow:hidden">';
@@ -158,7 +160,7 @@ function openDayMo(ds){
     const label=(h%12===0?12:h%12)+(h<12?' AM':' PM');
     html+=`<div style="display:flex;border-bottom:1px solid var(--cream-mid);min-height:38px">
       <div style="width:62px;flex-shrink:0;padding:8px 10px;font-size:11px;font-weight:600;color:var(--ink-faint);background:var(--cream-mid);text-align:right">${label}</div>
-      <div style="flex:1;padding:5px 8px">${items.map(it=>`<div style="background:${it.color};border-radius:6px;padding:5px 9px;margin:2px 0;font-size:12px"><span style="font-weight:600;color:var(--ink)">${it.icon} ${esc(it.kind)}</span> — ${esc(it.names)} <span style="color:var(--ink-faint)">${it.time?it.time.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):''}</span></div>`).join('')}</div>
+      <div style="flex:1;padding:5px 8px">${items.map(it=>`<div ${it.act?`onclick="${it.act}" `:''}style="background:${it.color};border-radius:6px;padding:5px 9px;margin:2px 0;font-size:12px${it.act?';cursor:pointer':''}"><span style="font-weight:600;color:var(--ink)">${it.icon} ${esc(it.kind)}</span> — ${esc(it.names)} <span style="color:var(--ink-faint)">${it.time?it.time.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):''}</span>${it.act?' <span style="color:var(--ink-faint);float:right">View ›</span>':''}</div>`).join('')}</div>
     </div>`;
   }
   html+='</div>';
