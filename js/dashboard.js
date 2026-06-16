@@ -195,6 +195,7 @@ function renderCurrentlyBoarding(){
 async function quickCheckIn(requestId){
   const req = (typeof requests!=='undefined'?requests:[]).find(r => r.id === requestId);
   if(!req){ toast('Reservation not found.', true); return; }
+  if(req.status === 'pending'){ toast('Please confirm this reservation before checking in.', true); return; }
   if(req.status === 'checked_in'){ toast(req.dog_name+' is already checked in.'); return; }
   if(req.status === 'completed'){ toast(req.dog_name+' is already checked out.', true); return; }
   if(!confirm('Check in '+req.dog_name+' now?')) return;
@@ -295,8 +296,10 @@ function renderDayNavigation(){
         + '<div style="font-weight:600;font-size:13px">' + esc(r.dog_name||'') + '</div>'
         + '<div style="font-size:11px;color:'+color+'">' + label + '</div>'
         + '</div>';
-      if(r.status === 'confirmed' || r.status === 'pending'){
+      if(r.status === 'confirmed'){
         html += '<button class="btn btn-b sm" style="font-size:11px" onclick="quickCheckIn(\''+r.id+'\')">Check In</button>';
+      } else if(r.status === 'pending'){
+        html += '<button class="btn btn-o sm" style="font-size:11px" onclick="goPage(\'requests\')">Confirm first</button>';
       } else if(r.status === 'checked_in'){
         html += '<button class="btn btn-g sm" style="font-size:11px" onclick="openCheckOut(\''+r.id+'\')">Check Out</button>';
       } else {

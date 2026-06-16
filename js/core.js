@@ -12,28 +12,31 @@ const SCHEMA = hostname.includes('test') ? 'test' : 'public';
 
 let authToken = null; // Supabase user access token when signed in
 async function sbFetch(path, method='GET', body=null, _retried=false) {
-  // AUTO-PREFIX TABLE NAMES WITH SCHEMA.
-  // The table name is everything before the first '?'. Only prefix if the table
-  // name itself isn't already schema-qualified (no '.' in the table portion).
-  // NOTE: filters after '?' (e.g. id=eq.123, order=created_at.desc) legitimately
-  // contain dots and must NOT prevent prefixing.
+  // Schema selection uses PostgREST Profile headers (the correct method):
+  //   Accept-Profile  for reads (GET)
+  //   Content-Profile for writes (POST/PATCH/DELETE/PUT)
+  // The table name is sent bare in the path; if a caller passed a legacy
+  // "schema.table" path, strip the schema part so we don't double-target.
   let queryPath = path;
   const qIdx = path.indexOf('?');
-  const table = qIdx === -1 ? path : path.slice(0, qIdx);
-  const filter = qIdx === -1 ? '' : path.slice(qIdx); // includes leading '?'
-  if (!table.includes('.')) {
-    queryPath = `${SCHEMA}.${table}${filter}`;
-  }
-  
-  const opts = {
-    method,
-    headers: {
-      'apikey': SB_KEY,
-      'Authorization': 'Bearer ' + (authToken || SB_KEY),
-      'Content-Type': 'application/json',
-      'Prefer': method === 'POST' ? 'return=representation' : ''
-    }
+  let table = qIdx === -1 ? path : path.slice(0, qIdx);
+  const filter = qIdx === -1 ? '' : path.slice(qIdx);
+  // Strip any leading "public." or "test." that legacy callers might include
+  table = table.replace(/^(public|test)\./, '');
+  queryPath = table + filter;
+
+  const isWrite = method !== 'GET';
+  const headers = {
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer ' + (authToken || SB_KEY),
+    'Content-Type': 'application/json',
+    'Prefer': method === 'POST' ? 'return=representation' : ''
   };
+  // Point the request at the correct schema
+  if (isWrite) headers['Content-Profile'] = SCHEMA;
+  else headers['Accept-Profile'] = SCHEMA;
+
+  const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(SB_URL + '/rest/v1/' + queryPath, opts);
   if (!res.ok) {
