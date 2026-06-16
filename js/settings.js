@@ -4,7 +4,8 @@
 function renderSettings() {
   const s=settings;
   document.getElementById('s-br').value=s.boardingRate; document.getElementById('s-dc').value=s.daycareRate;
-  document.getElementById('s-th').value=s.threshold; document.getElementById('s-pc').value=s.surchargePct;
+  document.getElementById('s-th').value=s.threshold;
+  const spc=document.getElementById('s-pc'); if(spc) spc.value=s.surchargePct;
   document.getElementById('s-bn').value=s.bizName||''; document.getElementById('s-bp').value=s.bizPhone||'';
   document.getElementById('s-be').value=s.bizEmail||''; document.getElementById('s-ba').value=s.bizAddr||'';
   document.getElementById('s-cap').value=s.capacity||12;
@@ -190,17 +191,28 @@ function handleLogoFile(input){
 }
 function resetLogo(){ pendingLogo='__default__'; const lp=document.getElementById('logo-preview'); if(lp) lp.src=DEFAULT_LOGO; toast('Will reset to default logo on Save.'); }
 function updateScPrev() {
-  const t=parseFloat(document.getElementById('s-th').value)||3, p=parseFloat(document.getElementById('s-pc').value)||50, r=parseFloat(document.getElementById('s-br').value)||55;
-  document.getElementById('sc-prev').innerHTML=`<strong>Rule:</strong> If check-out is more than <strong>${t} hour${t!==1?'s':''}</strong> past a full 24h period, a surcharge of <strong>${p}%</strong> ($${(r*p/100).toFixed(2)}) is added.`;
+  const scp=document.getElementById('sc-prev'); if(!scp) return;
+  const t=parseFloat((document.getElementById('s-th')||{}).value)||3;
+  const r=parseFloat((document.getElementById('s-br')||{}).value)||55;
+  const sType=(settings&&settings.surchargeType)?settings.surchargeType:'percent';
+  if(sType==='fixed'){
+    const amt=(settings&&settings.surchargeAmt)?settings.surchargeAmt:15;
+    scp.innerHTML=`<strong>Rule:</strong> If check-out is more than <strong>${t} hour${t!==1?'s':''}</strong> past a full 24h period, a fixed surcharge of <strong>$${Number(amt).toFixed(2)}</strong> is added.`;
+  } else {
+    const p=(settings&&settings.surchargePct)?settings.surchargePct:25;
+    scp.innerHTML=`<strong>Rule:</strong> If check-out is more than <strong>${t} hour${t!==1?'s':''}</strong> past a full 24h period, a surcharge of <strong>${p}%</strong> ($${(r*p/100).toFixed(2)}) is added.`;
+  }
 }
-['s-th','s-pc','s-br'].forEach(id=>document.getElementById(id).addEventListener('input',updateScPrev));
+['s-th','s-pc','s-br'].forEach(id=>{const el=document.getElementById(id); if(el) el.addEventListener('input',updateScPrev);});
 
 async function saveSettings() {
   settings={
     boardingRate:parseFloat(document.getElementById('s-br').value)||DEF.boardingRate,
     daycareRate:parseFloat(document.getElementById('s-dc').value)||DEF.daycareRate,
     threshold:parseFloat(document.getElementById('s-th').value)||DEF.threshold,
-    surchargePct:parseFloat(document.getElementById('s-pc').value)||DEF.surchargePct,
+    surchargePct:parseFloat((document.getElementById('s-pc')||{}).value)||(settings&&settings.surchargePct)||DEF.surchargePct,
+    surchargeType:(settings&&settings.surchargeType)||'percent',
+    surchargeAmt:(settings&&settings.surchargeAmt)||DEF.surchargeAmt||15,
     bizName:document.getElementById('s-bn').value.trim()||DEF.bizName,
     bizPhone:document.getElementById('s-bp').value.trim(),
     bizEmail:document.getElementById('s-be').value.trim(),
