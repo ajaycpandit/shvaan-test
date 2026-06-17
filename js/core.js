@@ -59,8 +59,8 @@ async function dbUpdateDog(id,d){ return await sbFetch('dogs?id=eq.'+encodeURICo
 async function dbDeleteDog(id){ return await sbFetch('dogs?id=eq.'+encodeURIComponent(id), 'DELETE'); }
 async function dbGetNotes(){ return await sbFetch('visit_notes?order=created_at.desc').catch(()=>[]) || []; }
 async function dbAddNote(n){ return await sbFetch('visit_notes','POST',n).catch(e=>{throw e;}); }
-async function dbUpdNote(id,d){ return await sbFetch('visit_notes?id=eq.'+encodeURIComponent(id),'PATCH',d).catch(()=>null); }
-async function dbDelNote(id){ return await sbFetch('visit_notes?id=eq.'+encodeURIComponent(id),'DELETE').catch(()=>null); }
+async function dbUpdNote(id,d){ return await sbFetch('visit_notes?id=eq.'+encodeURIComponent(id),'PATCH',d); }
+async function dbDelNote(id){ return await sbFetch('visit_notes?id=eq.'+encodeURIComponent(id),'DELETE'); }
 async function dbUpsertDogs(arr){ return await sbFetch('dogs', 'POST', arr); } // used by import
 
 /* BOOKINGS */
@@ -83,9 +83,9 @@ async function dbSaveSettings(data) {
 
 /* REQUESTS */
 async function dbGetReqs(){ return await sbFetch('requests?order=created_at.desc').catch(()=>[]) || []; }
-async function dbAddReq(r){ return await sbFetch('requests','POST',r).catch(()=>null); }
+async function dbAddReq(r){ return await sbFetch('requests','POST',r); }
 async function dbUpdReq(id,d){ return await sbFetch('requests?id=eq.'+encodeURIComponent(id),'PATCH',d); }
-async function dbDelReq(id){ return await sbFetch('requests?id=eq.'+encodeURIComponent(id),'DELETE').catch(()=>null); }
+async function dbDelReq(id){ return await sbFetch('requests?id=eq.'+encodeURIComponent(id),'DELETE'); }
 
 /* VACC FILE UPLOAD (Supabase Storage) */
 async function uploadVaccFile(dogId, file){

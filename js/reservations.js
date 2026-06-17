@@ -59,8 +59,19 @@ async function addRequest(){
   const selDogList=[...reqSelDogs].map(id=>dogs.find(d=>d.id===id)).filter(Boolean);
   const rec={ id:Date.now().toString(), dog_id:selDogList[0].id, dog_name:selDogList.map(d=>d.dog_name).join(', '), owner_name:selDogList[0].owner_name, dog_ids:selDogList.map(d=>d.id), service:document.getElementById('req-svc').value, checkin:ci+'T'+cit, checkout:co+'T'+cot, notes:document.getElementById('req-notes').value.trim(), status:'pending', created_at:new Date().toISOString() };
   setSyncState('busy');
-  try{ await dbAddReq(rec); requests.unshift(rec); setSyncState('ok'); document.getElementById('req-notes').value=''; reqSelDogs=new Set(); renderReqSel(); renderRequests(); updateBadges(); refreshActive(); toast('Reservation added!'); }
-  catch(e){ setSyncState('err'); toast('Error: '+e.message, true); }
+  try{
+    await dbAddReq(rec);          // throws if the DB rejects it
+    requests.unshift(rec);        // only reflect in UI after a confirmed save
+    setSyncState('ok');
+    document.getElementById('req-notes').value='';
+    reqSelDogs=new Set();
+    renderReqSel(); renderRequests(); updateBadges(); refreshActive();
+    toast('Reservation added!');
+  }
+  catch(e){
+    setSyncState('err');
+    toast('Could not save reservation: '+e.message, true);
+  }
 }
 function setReqView(arch){ reqShowArchived=arch; renderRequests(); }
 function renderRequests(){
