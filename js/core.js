@@ -4,11 +4,16 @@
 const SB_URL = 'https://xtvyyszobucmaktpulxt.supabase.co';
 const SB_KEY = 'sb_publishable_yz_iycmCCjIld2KoB_SNDg_TLHYHdhv';
 
-// 🆕 AUTO-DETECT SCHEMA BASED ON DEPLOYMENT DOMAIN
-// ajaycpandit.github.io/shvaan-test → 'test' schema
-// ajaycpandit.github.io/Shvaanpetcare → 'public' schema
-const hostname = window.location.hostname;
-const SCHEMA = hostname.includes('test') ? 'test' : 'public';
+// 🆕 AUTO-DETECT SCHEMA BASED ON DEPLOYMENT URL
+// Both sites share the SAME hostname (ajaycpandit.github.io); only the path
+// differs. Match the test repo path explicitly so prod can never be mistaken
+// for test (a loose "includes('test')" on the whole URL is too fragile).
+//   ajaycpandit.github.io/shvaan-test/...  → 'test' schema
+//   ajaycpandit.github.io/Shvaanpetcare/... → 'public' schema
+const _path = window.location.pathname.toLowerCase();
+const SCHEMA = (_path.indexOf('/shvaan-test') === 0 || _path.indexOf('shvaan-test') !== -1)
+  ? 'test'
+  : 'public';
 
 let authToken = null; // Supabase user access token when signed in
 async function sbFetch(path, method='GET', body=null, _retried=false) {
