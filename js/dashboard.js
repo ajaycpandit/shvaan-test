@@ -102,9 +102,68 @@ function renderDashboard(){
   
   // Render three features
   if(typeof renderCurrentlyBoarding === 'function') renderCurrentlyBoarding();
+  if(typeof renderWeekAvail === 'function') renderWeekAvail();
   if(typeof renderDayNavigation === 'function') renderDayNavigation();
   if(typeof renderTrends === 'function') renderTrends();
 }
+
+/* ── Week availability strip ──────────────────────────────────
+   Shows a 7-day week with spaces available per day; scroll weeks. */
+let weekAvailStart = null; // Monday of the displayed week
+function _mondayOf(d){ const x=new Date(d); const day=(x.getDay()+6)%7; x.setDate(x.getDate()-day); x.setHours(0,0,0,0); return x; }
+function _dsOf(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function renderWeekAvail(){
+  const host = document.getElementById('dash-week-avail');
+  if(!host) return;
+  if(!weekAvailStart) weekAvailStart = _mondayOf(new Date());
+  const cap = (typeof settings!=='undefined' && settings.capacity) ? settings.capacity : 12;
+  const todayDs = _dsOf(new Date());
+  const days = [];
+  for(let i=0;i<7;i++){ const d=new Date(weekAvailStart); d.setDate(d.getDate()+i); days.push(d); }
+  const occFn = (typeof dayOccupancy==='function') ? dayOccupancy : null;
+
+  const weekEnd = new Date(weekAvailStart); weekEnd.setDate(weekEnd.getDate()+6);
+  const rangeLabel = weekAvailStart.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' – ' +
+    weekEnd.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+  let cells = days.map(function(d){
+    const ds=_dsOf(d);
+    const occ = occFn ? occFn(ds) : 0;
+    const avail = Math.max(0, cap-occ);
+    const isToday = ds===todayDs;
+    // color by availability
+    let bg='var(--cream)', bar='var(--forest)', availColor='var(--ink)';
+    if(avail<=0){ bg='rgba(193,79,63,0.12)'; bar='var(--danger)'; availColor='var(--danger)'; }
+    else if(avail===1){ bg='rgba(217,164,65,0.16)'; bar='var(--gold)'; availColor='var(--brown-dark)'; }
+    const dow = d.toLocaleDateString('en-US',{weekday:'short'});
+    const dnum = d.getDate();
+    return '<div onclick="openDayMo(\''+ds+'\')" style="flex:1;min-width:0;cursor:pointer;position:relative;background:'+bg+';border:1px solid '+(isToday?'var(--brown)':'var(--cream-dark)')+';border-radius:var(--r2);padding:9px 4px 8px;text-align:center;overflow:hidden">'
+      + '<div style="position:absolute;top:0;left:0;width:100%;height:3px;background:'+bar+'"></div>'
+      + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint)">'+dow+'</div>'
+      + '<div style="font-size:15px;font-weight:700;color:'+(isToday?'var(--brown-dark)':'var(--ink-mid)')+';margin:1px 0 4px">'+dnum+'</div>'
+      + '<div style="font-size:17px;font-family:\'DM Serif Display\',serif;line-height:1;color:'+availColor+'">'+avail+'</div>'
+      + '<div style="font-size:9px;color:var(--ink-faint);margin-top:1px">'+(avail===1?'space':'spaces')+'</div>'
+      + '</div>';
+  }).join('');
+
+  host.innerHTML = '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">'
+    + '<div class="ct" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Availability this week</div>'
+    + '<div style="display:flex;align-items:center;gap:6px">'
+    + '<button class="btn btn-o sm" style="font-size:11px;padding:5px 9px" onclick="weekAvailPrev()">‹</button>'
+    + '<button class="btn btn-o sm" style="font-size:11px;padding:5px 10px" onclick="weekAvailToday()">This week</button>'
+    + '<button class="btn btn-o sm" style="font-size:11px;padding:5px 9px" onclick="weekAvailNext()">›</button>'
+    + '</div></div>'
+    + '<div style="font-size:12px;color:var(--ink-faint);margin-bottom:10px">'+esc(rangeLabel)+' · capacity '+cap+'</div>'
+    + '<div style="display:flex;gap:6px">'+cells+'</div>'
+    + '<div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--ink-faint)">'
+    + '<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--forest)"></span>Open</span>'
+    + '<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--gold)"></span>1 left</span>'
+    + '<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--danger)"></span>Full</span>'
+    + '</div></div>';
+}
+function weekAvailPrev(){ weekAvailStart = weekAvailStart || _mondayOf(new Date()); weekAvailStart.setDate(weekAvailStart.getDate()-7); renderWeekAvail(); }
+function weekAvailNext(){ weekAvailStart = weekAvailStart || _mondayOf(new Date()); weekAvailStart.setDate(weekAvailStart.getDate()+7); renderWeekAvail(); }
+function weekAvailToday(){ weekAvailStart = _mondayOf(new Date()); renderWeekAvail(); }
 
 /* ── Right panel ──────────────────────────────────────────── */
 function renderRightPanel() {
