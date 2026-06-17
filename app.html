@@ -211,6 +211,8 @@
             <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#E8D5A0"></div>Check-out</div>
             <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#BCCFE8"></div>Staying</div>
             <div class="cal-legend-item"><div class="cal-legend-dot" style="background:#D5CCF0"></div>Pending Request</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--gold)"></div>1 space left</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--danger)"></div>Full</div>
           </div>
         </div>
         <div class="cal-wrap" id="cal-list-wrap" style="display:none">
@@ -387,6 +389,25 @@
               <div class="ss">
                 <div class="fh" style="margin-bottom:10px">Choose which trend panels appear on your dashboard. Toggle any on or off as you like.</div>
                 <div id="settings-trends"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="acc" id="acc-advanced">
+            <div class="acc-head" onclick="toggleAcc('acc-advanced')"><h3>🛠️ Advanced Tools</h3><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg></div>
+            <div class="acc-body">
+              <div class="ss">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:9px 0">
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:600;color:var(--ink)">Reservation reversal tool</div>
+                    <div style="font-size:11px;color:var(--ink-faint);line-height:1.5">Enables a tool to send completed reservations back to an earlier stage (for fixing mistakes in bulk). Removes the generated invoice and clears check-in/out times. Keep this <strong>off</strong> unless you're actively cleaning up — it's a destructive operation.</div>
+                  </div>
+                  <label class="switch" style="position:relative;display:inline-block;width:42px;height:24px;flex:none">
+                    <input type="checkbox" id="adv-reversal-toggle" onchange="toggleReversalFeature(this.checked)" style="opacity:0;width:0;height:0">
+                    <span id="adv-reversal-track" style="position:absolute;cursor:pointer;inset:0;background:var(--cream-dark);border-radius:24px;transition:.2s"><span id="adv-reversal-knob" style="position:absolute;height:18px;width:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s"></span></span>
+                  </label>
+                </div>
+                <div id="reversal-tool" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--cream-dark)"></div>
               </div>
             </div>
           </div>

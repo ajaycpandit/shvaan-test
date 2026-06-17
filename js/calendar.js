@@ -32,6 +32,29 @@ function calEvents(){
   });
   return evts;
 }
+function dayOccupancy(ds){
+  // Count dogs boarding/day-caring on a given date string (YYYY-MM-DD)
+  const parts=ds.split('-');
+  const day=new Date(+parts[0], +parts[1]-1, +parts[2]);
+  const dayMid=new Date(day.getFullYear(),day.getMonth(),day.getDate());
+  let count=0;
+  (typeof requests!=='undefined'?requests:[]).forEach(r=>{
+    if(r.status!=='confirmed' && r.status!=='checked_in') return;
+    const ci=new Date(r.actual_checkin||r.checkin), co=new Date(r.checkout);
+    if(isNaN(ci)) return;
+    const ciMid=new Date(ci.getFullYear(),ci.getMonth(),ci.getDate());
+    const coMid=isNaN(co)?ciMid:new Date(co.getFullYear(),co.getMonth(),co.getDate());
+    if(dayMid>=ciMid && dayMid<=coMid){ count += (r.dog_ids&&r.dog_ids.length)?r.dog_ids.length:1; }
+  });
+  return count;
+}
+function dayOccupancyClass(ds){
+  const cap=(typeof settings!=='undefined' && settings.capacity)?settings.capacity:12;
+  const count=dayOccupancy(ds);
+  if(count>=cap) return ' occ-full';        // at or over capacity
+  if(count===cap-1) return ' occ-one-left';  // exactly 1 space remaining
+  return '';
+}
 function renderCalendar(){
   const dows=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   document.getElementById('cal-title').textContent=new Date(calYear,calMonth,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});
@@ -43,7 +66,8 @@ function renderCalendar(){
   for(let d=1;d<=days;d++){
     const ds=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const de=em[ds]||[], isT=ds===todayS, hasE=de.length>0, show=de.slice(0,3), more=de.length-3;
-    html+=`<div class="cal-day${isT?' today':''}${hasE?' has-events':''}" onclick="openDayMo('${ds}')" style="cursor:pointer"><div class="cal-day-num">${d}</div>${show.map(e=>`<div class="cal-event ${e.type}" style="cursor:pointer">${esc(e.label)}</div>`).join('')}${more>0?`<div class="cal-event more">+${more} more</div>`:''}</div>`;
+    const occ=dayOccupancyClass(ds);
+    html+=`<div class="cal-day${isT?' today':''}${hasE?' has-events':''}${occ}" onclick="openDayMo('${ds}')" style="cursor:pointer"><div class="cal-day-num">${d}</div>${show.map(e=>`<div class="cal-event ${e.type}" style="cursor:pointer">${esc(e.label)}</div>`).join('')}${more>0?`<div class="cal-event more">+${more} more</div>`:''}</div>`;
   }
   const total=first+days, nextFill=total%7===0?0:7-(total%7);
   for(let d=1;d<=nextFill;d++){ const nd=new Date(calYear,calMonth+1,d); html+=`<div class="cal-day other-month" onclick="openDayMo('${dStr(nd)}')" style="cursor:pointer"><div class="cal-day-num">${d}</div></div>`; }

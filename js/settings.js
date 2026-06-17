@@ -50,6 +50,7 @@ function renderSettings() {
   const tc=document.getElementById('team-card');
   if(tc){ if(isAdmin()){ tc.style.display=''; renderTeamList(); tmRenderPerms(); tmRoleChange(); } else { tc.style.display='none'; } }
   if(typeof renderTrendToggles==='function') renderTrendToggles();
+  if(typeof renderReversalToggle==='function') renderReversalToggle();
 }
 
 // Dashboard trend enable/disable toggles
@@ -297,7 +298,8 @@ async function saveSettings() {
     capacity:parseInt(document.getElementById('s-cap').value)||DEF.capacity,
     logo: pendingLogo==='__default__' ? null : (pendingLogo || settings.logo || null),
     theme: settings.theme || 'terracotta',
-    trendsEnabled: settings.trendsEnabled || {}
+    trendsEnabled: settings.trendsEnabled || {},
+    reversalToolEnabled: settings.reversalToolEnabled || false
   };
   setSyncState('busy');
   try { await dbSaveSettings(settings); try{ if(settings.logo) localStorage.setItem('shvaan_logo', settings.logo); else localStorage.removeItem('shvaan_logo'); }catch(e){} pendingLogo=null; applyLogo(); setSyncState('ok'); toast('Settings saved!'); recalc(); }
@@ -322,4 +324,113 @@ function esc(s){ if(!s)return''; return String(s).replace(/&/g,'&amp;').replace(
 function toggleAcc(id){
   const el = document.getElementById(id);
   if(el) el.classList.toggle('open');
+}
+
+/* ═══════════════════════════════════════
+   ADVANCED: Reservation reversal tool (settings-gated, audited)
+═══════════════════════════════════════ */
+function renderReversalToggle(){
+  const on = !!(settings && settings.reversalToolEnabled);
+  const cb = document.getElementById('adv-reversal-toggle');
+  const track = document.getElementById('adv-reversal-track');
+  const knob = document.getElementById('adv-reversal-knob');
+  const tool = document.getElementById('reversal-tool');
+  if(cb) cb.checked = on;
+  if(track) track.style.background = on ? 'var(--brown)' : 'var(--cream-dark)';
+  if(knob) knob.style.left = on ? '21px' : '3px';
+  if(tool){ tool.style.display = on ? 'block' : 'none'; if(on) renderReversalTool(); }
+}
+
+async function toggleReversalFeature(on){
+  if(!settings) return;
+  settings.reversalToolEnabled = on;
+  renderReversalToggle();
+  setSyncState('busy');
+  try{ await dbSaveSettings(settings); setSyncState('ok'); }
+  catch(e){ setSyncState('err'); }
+}
+
+function renderReversalTool(){
+  const host = document.getElementById('reversal-tool');
+  if(!host) return;
+  const completed = (typeof requests!=='undefined'?requests:[]).filter(r=>r.status==='completed')
+    .sort((a,b)=> new Date(b.actual_checkout||b.checkout) - new Date(a.actual_checkout||a.checkout));
+  if(!completed.length){
+    host.innerHTML = '<div style="font-size:12px;color:var(--ink-faint)">No completed reservations to reverse.</div>';
+    return;
+  }
+  let html = '<div style="font-size:12px;font-weight:600;color:var(--ink-mid);margin-bottom:8px">Reverse completed reservations → confirmed</div>';
+  html += '<div style="font-size:11px;color:var(--ink-faint);margin-bottom:10px;line-height:1.5">Select reservations to send back to “confirmed.” This deletes the generated invoice and clears check-in/out times. Every reversal is logged. This cannot be auto-redone.</div>';
+  html += '<div style="display:flex;gap:8px;margin-bottom:10px"><button class="btn btn-o sm" style="font-size:11px" onclick="revSelectAll(true)">Select all</button><button class="btn btn-o sm" style="font-size:11px" onclick="revSelectAll(false)">Clear</button></div>';
+  html += '<div style="max-height:260px;overflow-y:auto;border:1px solid var(--cream-dark);border-radius:var(--r2)">';
+  completed.forEach(function(r){
+    const co = new Date(r.actual_checkout||r.checkout);
+    const coStr = isNaN(co)?'—':co.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const amt = (r.final_total!=null)?(' · $'+parseFloat(r.final_total).toFixed(2)):'';
+    html += '<label style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-bottom:1px solid var(--cream-mid);cursor:pointer">'
+      + '<input type="checkbox" class="rev-cb" value="'+r.id+'" style="width:16px;height:16px;accent-color:var(--brown);flex:none">'
+      + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">'+esc(r.dog_name||'')+'</div>'
+      + '<div style="font-size:11px;color:var(--ink-faint)">Checked out '+coStr+amt+'</div></div></label>';
+  });
+  html += '</div>';
+  html += '<button class="btn btn-d" style="margin-top:12px" onclick="runReversal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>Reverse selected → Confirmed</button>';
+  html += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--cream-dark)"><div style="font-size:11px;font-weight:600;color:var(--ink-mid);margin-bottom:6px">Recent reversal log</div><div id="reversal-log" style="font-size:11px;color:var(--ink-faint)"></div></div>';
+  host.innerHTML = html;
+  renderReversalLog();
+}
+
+function revSelectAll(on){
+  document.querySelectorAll('.rev-cb').forEach(function(cb){ cb.checked = on; });
+}
+
+function renderReversalLog(){
+  const el = document.getElementById('reversal-log');
+  if(!el) return;
+  const logs = (typeof visitNotes!=='undefined'?visitNotes:[]).filter(function(n){ return n.note_type==='admin_action'; })
+    .sort(function(a,b){ return new Date(b.created_at)-new Date(a.created_at); }).slice(0,10);
+  if(!logs.length){ el.innerHTML='<span style="color:var(--ink-faint)">No reversals logged yet.</span>'; return; }
+  el.innerHTML = logs.map(function(n){
+    const when = new Date(n.created_at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    return '<div style="padding:4px 0;border-bottom:1px solid var(--cream-mid)">'+esc(n.note||'')+' <span style="color:var(--ink-light)">· '+esc(n.created_by||'unknown')+' · '+when+'</span></div>';
+  }).join('');
+}
+
+async function runReversal(){
+  const ids = Array.from(document.querySelectorAll('.rev-cb')).filter(function(cb){return cb.checked;}).map(function(cb){return cb.value;});
+  if(!ids.length){ toast('Select at least one reservation.', true); return; }
+  if(!confirm('Reverse '+ids.length+' reservation'+(ids.length!==1?'s':'')+' back to “confirmed”?\n\nThis deletes their generated invoices and clears check-in/out times. Each action will be logged. This cannot be auto-redone.')) return;
+
+  setSyncState('busy');
+  let done=0, failed=0;
+  for(const id of ids){
+    const r = (typeof requests!=='undefined'?requests:[]).find(function(x){return x.id===id;});
+    if(!r || r.status!=='completed'){ failed++; continue; }
+    try{
+      // delete generated invoice/booking
+      if(r.booking_id){
+        try{ await dbDeleteBooking(r.booking_id); }catch(_){}
+        if(typeof bookings!=='undefined') bookings = bookings.filter(function(b){return b.id!==r.booking_id;});
+      }
+      const prevTotal = r.final_total;
+      await dbUpdReq(r.id, {status:'confirmed', actual_checkin:null, actual_checkout:null, final_total:null, booking_id:null});
+      r.status='confirmed'; r.actual_checkin=null; r.actual_checkout=null; r.final_total=null; r.booking_id=null;
+      // audit log entry
+      const logNote = {
+        id: Date.now().toString()+Math.random().toString(36).slice(2),
+        dog_id: r.dog_id||null, dog_name: r.dog_name||'',
+        note_type: 'admin_action',
+        note: 'Reversed completed → confirmed for '+(r.dog_name||'reservation')+(prevTotal!=null?' (invoice $'+parseFloat(prevTotal).toFixed(2)+' removed)':''),
+        created_by: (typeof currentUser!=='undefined'&&currentUser)?currentUser.email:'unknown',
+        created_at: new Date().toISOString()
+      };
+      try{ await dbAddNote(logNote); if(typeof visitNotes!=='undefined') visitNotes.unshift(logNote); }catch(_){}
+      done++;
+    }catch(e){ failed++; }
+  }
+  setSyncState(failed?'err':'ok');
+  toast('✓ Reversed '+done+(failed?(' · '+failed+' failed'):'')+'.', failed>0);
+  renderReversalTool();
+  if(typeof updateBadges==='function') updateBadges();
+  if(typeof renderRequests==='function') renderRequests();
+  if(typeof renderDashboard==='function') renderDashboard();
 }

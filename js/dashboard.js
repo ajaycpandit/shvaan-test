@@ -53,7 +53,7 @@ function renderDashboard(){
   const depRow=departures.length?departures.map(r=>{
     const dog=dogs.find(x=>x.id===r.dog_id);
     const overdueTag=new Date(r.checkout)<now?' <span class="bdg bdg-r" style="background:var(--danger-pale);color:var(--danger);border:1px solid #EAB0AC">overdue</span>':'';
-    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--cream-mid)"><div class="dd-ava" style="width:30px;height:30px;font-size:14px">${dog&&dog.photo?`<img src="${dog.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(r.dog_name)}${overdueTag}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(r.checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div></div><button class="btn btn-g sm" onclick="openCheckOut('${r.id}')">Check Out</button></div>`;
+    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--cream-mid)"><div class="dd-ava" style="width:30px;height:30px;font-size:14px">${dog&&dog.photo?`<img src="${dog.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">${esc(r.dog_name)}${overdueTag}</div><div style="font-size:11px;color:var(--ink-faint)">${new Date(r.checkout).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</div></div><button class="btn btn-g sm" onclick="quickCheckOut('${r.id}')">Check Out</button></div>`;
   }).join(''):'<div style="font-size:12px;color:var(--ink-faint);padding:10px 0">No departures today</div>';
   document.getElementById('dash-ops').innerHTML=
     `<div class="card" style="margin-bottom:14px"><div class="ct"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Arrivals Today (${arrivals.length})</div>${arrRow}</div>`+
@@ -184,11 +184,67 @@ function renderCurrentlyBoarding(){
       + '<div style="font-size:13px;font-weight:600">' + esc(r.dog_name||'') + '</div>'
       + '<div style="font-size:11px;color:var(--ink-faint)">Checks out ' + coStr + '</div>'
       + '</div>'
-      + '<button class="btn btn-g sm" style="font-size:11px" onclick="openCheckOut(\'' + r.id + '\')">Check Out</button>'
+      + '<button class="btn btn-g sm" style="font-size:11px" onclick="quickCheckOut(\'' + r.id + '\')">Check Out</button>'
       + '</div>';
   });
   html += '</div>';
   cb.innerHTML = html;
+}
+
+// Quick Check-out — one-click checkout at the current time, no discount.
+// Mirrors quickCheckIn but also bills: calculates the final total and generates an invoice.
+async function quickCheckOut(requestId){
+  const r = (typeof requests!=='undefined'?requests:[]).find(x => x.id === requestId);
+  if(!r){ toast('Reservation not found.', true); return; }
+  if(r.status === 'completed'){ toast(r.dog_name+' is already checked out.', true); return; }
+  if(r.status !== 'checked_in'){ toast('Please check '+r.dog_name+' in before checking out.', true); return; }
+
+  const now = new Date();
+  const inDt = new Date(r.actual_checkin || r.checkin);
+  if(isNaN(inDt)){ toast('No valid check-in time on file. Use the full Check Out to set it.', true); return; }
+  if(now <= inDt){ toast('Check-out must be after check-in. Use the full Check Out to adjust.', true); return; }
+
+  // Calculate the bill exactly like saveCio (current time, no discount)
+  const ctxs = reqDogContexts(r);
+  const results = ctxs.map(dg => ({dog:dg, ...calcDogSvc(dg, inDt, now, r.service)}));
+  const subtotal = results.reduce((s,x)=> s + x.total, 0);
+
+  // One-tap: no confirmation prompt. Checkout is reversible via "Undo Checkout".
+  setSyncState('busy');
+  try{
+    const entries = results.map(x => ({
+      dogId:x.dog?x.dog.id:null, dogName:x.dog?x.dog.dog_name:'', ownerName:x.dog?x.dog.owner_name:r.owner_name,
+      phone:x.dog?x.dog.phone:'', photo:x.dog?x.dog.photo:null, notes:x.dog?x.dog.notes:'',
+      rate:x.rate, fullDays:x.fullDays, extraHrs:x.extraHrs, surcharge:x.surcharge, total:x.total, subtotal:x.total, discount:0
+    }));
+    if(entries[0]){ entries[0].requested_checkin=r.checkin; entries[0].requested_checkout=r.checkout; entries[0].discount_type='pct'; entries[0].discount_val=0; }
+    const booking = { id:Date.now().toString(), saved_at:new Date().toISOString(), service:r.service, checkin:inDt.toISOString(), checkout:now.toISOString(), grand_total:subtotal, requested_checkin:r.checkin, requested_checkout:r.checkout, entries:entries };
+
+    try { await dbInsertBooking(booking); }
+    catch(insErr){ setSyncState('err'); toast('Could not save booking: '+insErr.message, true); return; }
+
+    const fullPayload = {status:'completed', actual_checkin:inDt.toISOString(), actual_checkout:now.toISOString(), final_total:subtotal, booking_id:booking.id};
+    try {
+      await dbUpdReq(r.id, fullPayload);
+    } catch(updErr){
+      try { await dbUpdReq(r.id, {status:'completed'}); toast('Checked out, but some details could not be saved to the reservation. The invoice is saved.', true); }
+      catch(statusErr){
+        try { await dbDeleteBooking(booking.id); } catch(_){}
+        if(typeof bookings!=='undefined') bookings = bookings.filter(b=>b.id!==booking.id);
+        setSyncState('err'); toast('Checkout could not be saved: '+statusErr.message+'. Nothing changed — please try again.', true); return;
+      }
+    }
+    if(typeof bookings!=='undefined') bookings.unshift(booking);
+    r.status='completed'; r.actual_checkin=inDt.toISOString(); r.actual_checkout=now.toISOString(); r.final_total=subtotal; r.booking_id=booking.id;
+    setSyncState('ok');
+    toast('✓ '+r.dog_name+' checked out · $'+subtotal.toFixed(2));
+    if(typeof updateBadges==='function') updateBadges();
+    if(typeof renderDashboard==='function') renderDashboard();
+    if(typeof renderRequests==='function') renderRequests();
+    try { openInv(booking.id); } catch(invErr){ console.warn('Invoice open failed:', invErr); }
+  }catch(e){
+    setSyncState('err'); toast('Error: '+e.message, true);
+  }
 }
 
 // Quick Check-in — real status transition for a confirmed/pending reservation
@@ -324,7 +380,7 @@ function renderDayNavigation(){
       } else if(r.status === 'pending'){
         html += '<button class="btn btn-o sm" style="font-size:11px" onclick="goPage(\'requests\')">Confirm first</button>';
       } else if(r.status === 'checked_in'){
-        html += '<button class="btn btn-g sm" style="font-size:11px" onclick="openCheckOut(\''+r.id+'\')">Check Out</button>';
+        html += '<button class="btn btn-g sm" style="font-size:11px" onclick="quickCheckOut(\''+r.id+'\')">Check Out</button>';
       } else {
         html += '<button class="btn btn-o sm" style="font-size:11px" onclick="goPage(\'requests\')">View</button>';
       }
