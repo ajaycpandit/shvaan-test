@@ -133,10 +133,14 @@ function renderWeekAvail(){
     const occ = occFn ? occFn(ds) : 0;
     const avail = Math.max(0, cap-occ);
     const isToday = ds===todayDs;
-    // color by availability
-    let bg='var(--cream)', bar='var(--forest)', availColor='var(--ink)';
+    // Color strictly by spaces available:
+    //   0 left  → red (Full)
+    //   1 left  → amber (almost full)
+    //   2+ left → green (Open)
+    let bg='var(--cream)', bar='var(--forest)', availColor='var(--forest)';
     if(avail<=0){ bg='rgba(193,79,63,0.12)'; bar='var(--danger)'; availColor='var(--danger)'; }
     else if(avail===1){ bg='rgba(217,164,65,0.16)'; bar='var(--gold)'; availColor='var(--brown-dark)'; }
+    else { bg='var(--cream)'; bar='var(--forest)'; availColor='var(--forest)'; }
     const dow = d.toLocaleDateString('en-US',{weekday:'short'});
     const dnum = d.getDate();
     return '<div onclick="openDayMo(\''+ds+'\')" style="flex:0 0 auto;width:62px;cursor:pointer;position:relative;background:'+bg+';border:1px solid '+(isToday?'var(--brown)':'var(--cream-dark)')+';border-radius:var(--r2);padding:9px 4px 8px;text-align:center;overflow:hidden;scroll-snap-align:start">'

@@ -63,8 +63,12 @@ function custGo(tab){
 /* ── My Dogs ── */
 function renderCustDogs(){
   const c=document.getElementById('cust-tab-body');
-  if(!custDogs.length){ c.innerHTML='<div class="card"><div class="es"><span class="ei">🐕</span><p>No dogs on file yet. Contact us to add your dog\u2019s profile.</p></div></div>'; return; }
-  c.innerHTML='<div style="display:flex;flex-direction:column;gap:12px">'+custDogs.map(d=>{
+  const addBtn='<button class="btn btn-p" onclick="custAddDogForm()" style="margin-bottom:14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add a Dog</button>';
+  if(!custDogs.length){
+    c.innerHTML='<div class="card">'+addBtn+'<div class="es" style="margin-top:6px"><span class="ei">🐕</span><p>No dogs on file yet. Add your dog\u2019s profile to start requesting stays.</p></div></div>';
+    return;
+  }
+  c.innerHTML=addBtn+'<div style="display:flex;flex-direction:column;gap:12px">'+custDogs.map(d=>{
     const rv=vaccStatus(d.vacc_rabies), dv=vaccStatus(d.vacc_dhpp), bv=vaccStatus(d.vacc_bordetella);
     return `<div class="card" style="margin:0">
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px">
@@ -81,11 +85,66 @@ function renderCustDogs(){
   }).join('')+'</div>';
 }
 
+// Customer self-service: add their own dog profile (linked to their owner name)
+function custAddDogForm(){
+  const c=document.getElementById('cust-tab-body');
+  const today=new Date().toISOString().split('T')[0];
+  c.innerHTML=`<div class="card">
+    <div style="font-size:16px;font-weight:600;color:var(--ink);margin-bottom:14px">Add your dog</div>
+    <div class="fd" style="margin-bottom:10px"><label>Dog's Name *</label><input type="text" id="cd-name" placeholder="e.g. Bella"></div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fd"><label>Breed</label><input type="text" id="cd-breed" placeholder="e.g. Labrador"></div>
+      <div class="fd"><label>Your Phone</label><input type="tel" id="cd-phone" placeholder="(555) 000-0000"></div>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:var(--ink-mid);margin:6px 0 8px">Vaccination expiry dates (optional but recommended)</div>
+    <div class="g2" style="margin-bottom:10px">
+      <div class="fd"><label>Rabies expires</label><input type="date" id="cd-rabies"></div>
+      <div class="fd"><label>DHPP expires</label><input type="date" id="cd-dhpp"></div>
+      <div class="fd"><label>Bordetella expires</label><input type="date" id="cd-bord"></div>
+    </div>
+    <div class="fd" style="margin-bottom:12px"><label>Notes (allergies, behavior, feeding, etc.)</label><textarea id="cd-notes" rows="3" placeholder="Anything we should know"></textarea></div>
+    <div id="cd-err" style="display:none;color:var(--danger);font-size:12px;margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-p" onclick="custSaveDog()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="20 6 9 17 4 12"/></svg>Save Dog</button>
+      <button class="btn btn-o" onclick="renderCustDogs()">Cancel</button>
+    </div>
+  </div>`;
+}
+
+async function custSaveDog(){
+  const err=document.getElementById('cd-err');
+  const name=document.getElementById('cd-name').value.trim();
+  if(!name){ err.textContent='Please enter your dog\u2019s name.'; err.style.display='block'; return; }
+  const owner=(myProfile&&myProfile.owner_name)||'';
+  if(!owner){ err.textContent='Your account isn\u2019t linked to an owner name yet — please contact us.'; err.style.display='block'; return; }
+  const dog={
+    id:Date.now().toString()+Math.random().toString(36).slice(2),
+    dog_name:name,
+    owner_name:owner,
+    breed:document.getElementById('cd-breed').value.trim()||null,
+    phone:document.getElementById('cd-phone').value.trim()||null,
+    vacc_rabies:document.getElementById('cd-rabies').value||null,
+    vacc_dhpp:document.getElementById('cd-dhpp').value||null,
+    vacc_bordetella:document.getElementById('cd-bord').value||null,
+    notes:document.getElementById('cd-notes').value.trim()||null,
+    created_at:new Date().toISOString()
+  };
+  setSyncState('busy');
+  try{
+    await dbInsertDog(dog);
+    if(typeof dogs!=='undefined') dogs.unshift(dog);
+    if(typeof custDogs!=='undefined') custDogs.unshift(dog);
+    setSyncState('ok');
+    toast(name+' added! 🐾');
+    renderCustDogs();
+  }catch(e){ setSyncState('err'); err.textContent='Could not save: '+e.message; err.style.display='block'; }
+}
+
 /* ── Request Booking ── */
 let custBookDogs=new Set();
 function renderCustBook(){
   const c=document.getElementById('cust-tab-body');
-  if(!custDogs.length){ c.innerHTML='<div class="card"><div class="es"><span class="ei">🐕</span><p>We need your dog\u2019s profile on file before booking. Please contact us.</p></div></div>'; return; }
+  if(!custDogs.length){ c.innerHTML='<div class="card"><div class="es"><span class="ei">🐕</span><p>Add your dog\u2019s profile first, then you can request stays.</p><button class="btn btn-p" onclick="custGo(\'dogs\')" style="margin-top:10px">Go to My Dogs</button></div></div>'; return; }
   custBookDogs=new Set();
   const today=new Date().toISOString().split('T')[0];
   c.innerHTML=`<div class="card" style="margin:0">
