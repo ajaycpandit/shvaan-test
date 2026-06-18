@@ -51,6 +51,7 @@ function renderSettings() {
   if(tc){ if(isAdmin()){ tc.style.display=''; renderTeamList(); tmRenderPerms(); tmRoleChange(); } else { tc.style.display='none'; } }
   if(typeof renderTrendToggles==='function') renderTrendToggles();
   if(typeof renderReversalToggle==='function') renderReversalToggle();
+  if(typeof renderAuditLog==='function') renderAuditLog();
 }
 
 // Dashboard trend enable/disable toggles
@@ -166,19 +167,32 @@ async function renderTeamList(){
   if(cnt) cnt.textContent = teamProfiles.length ? '('+teamProfiles.length+')' : '';
 
   if(!teamProfiles.length){ el.innerHTML='<div style="font-size:12px;color:var(--ink-faint);padding:4px 0 8px">No team members configured yet. Anyone who logs in without a profile is treated as admin (first-run). Add people below to assign roles.</div>'; return; }
-  el.innerHTML='<div id="team-rows" style="display:flex;flex-direction:column;gap:8px">'+teamProfiles.map(p=>{
+  // Group by role so a large team stays organized, in a responsive grid
+  const roleOrder=[['admin','Admins','var(--coral)'],['staff','Staff','var(--blue)'],['customer','Customers','var(--forest)']];
+  const card=(p)=>{
     const roleColor={admin:'var(--coral)',staff:'var(--blue)',customer:'var(--forest)'}[p.role]||'var(--ink-light)';
     let detail='';
     if(p.role==='staff'){ const perms=p.permissions||{}; const on=SECTIONS.filter(s=>(s in perms)?perms[s]:(s!=='finance'&&s!=='settings')); detail='Can see: '+(on.length?on.join(', '):'nothing'); }
     else if(p.role==='customer'){ detail='Owner: '+(p.owner_name||'—'); }
     else detail='Full access';
     const hay=(p.email+' '+p.role+' '+(p.owner_name||'')).toLowerCase();
-    return `<div class="team-row" data-search="${esc(hay)}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--cream-dark);border-radius:var(--r2);background:var(--cream-mid)">
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.email)} <span style="font-size:11px;font-weight:600;color:${roleColor};text-transform:capitalize">· ${esc(p.role)}</span></div><div style="font-size:11px;color:var(--ink-faint);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(detail)}</div></div>
+    return `<div class="team-row" data-search="${esc(hay)}" data-role="${p.role}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--cream-dark);border-radius:var(--r2);background:var(--cream-mid)">
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.email)}</div><div style="font-size:11px;color:var(--ink-faint);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(detail)}</div></div>
       <button class="btn btn-o sm" onclick="tmEdit('${esc(p.email).replace(/'/g,"\\'")}')">Edit</button>
       <button class="btn btn-d sm" onclick="tmDelete('${esc(p.email).replace(/'/g,"\\'")}')">×</button>
     </div>`;
-  }).join('')+'</div><div id="team-noresults" style="display:none;font-size:12px;color:var(--ink-faint);padding:8px 0">No matches.</div>';
+  };
+  let out='';
+  roleOrder.forEach(function(grp){
+    const members=teamProfiles.filter(p=>p.role===grp[0]);
+    if(!members.length) return;
+    out += '<div class="team-group" data-group="'+grp[0]+'" style="margin-bottom:12px">'
+      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:'+grp[2]+';margin-bottom:6px">'+grp[1]+' ('+members.length+')</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">'
+      + members.map(card).join('')
+      + '</div></div>';
+  });
+  el.innerHTML = out + '<div id="team-noresults" style="display:none;font-size:12px;color:var(--ink-faint);padding:8px 0">No matches.</div>';
 }
 
 function filterTeamList(){
@@ -186,6 +200,11 @@ function filterTeamList(){
   const rows=document.querySelectorAll('.team-row');
   let shown=0;
   rows.forEach(r=>{ const match=!q||r.getAttribute('data-search').includes(q); r.style.display=match?'':'none'; if(match) shown++; });
+  // Hide a role group if all its members are filtered out
+  document.querySelectorAll('.team-group').forEach(g=>{
+    const visible=g.querySelectorAll('.team-row:not([style*="display: none"])').length;
+    g.style.display = visible? '' : 'none';
+  });
   const nr=document.getElementById('team-noresults');
   if(nr) nr.style.display = (rows.length&&shown===0)?'block':'none';
 }
@@ -374,7 +393,7 @@ function renderReversalTool(){
   });
   html += '</div>';
   html += '<button class="btn btn-d" style="margin-top:12px" onclick="runReversal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>Reverse selected → Confirmed</button>';
-  html += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--cream-dark)"><div style="font-size:11px;font-weight:600;color:var(--ink-mid);margin-bottom:6px">Recent reversal log</div><div id="reversal-log" style="font-size:11px;color:var(--ink-faint)"></div></div>';
+  html += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--cream-dark)"><div style="font-size:11px;font-weight:600;color:var(--ink-mid);margin-bottom:6px">Recent admin actions (reversals &amp; deletions)</div><div id="reversal-log" style="font-size:11px;color:var(--ink-faint)"></div></div>';
   host.innerHTML = html;
   renderReversalLog();
 }
@@ -434,3 +453,43 @@ async function runReversal(){
   if(typeof renderRequests==='function') renderRequests();
   if(typeof renderDashboard==='function') renderDashboard();
 }
+
+/* ═══════════════════════════════════════
+   Activity Log — dedicated, always-available, paginated
+═══════════════════════════════════════ */
+let auditLogPage = 0;
+const AUDIT_PAGE_SIZE = 15;
+function renderAuditLog(){
+  const host = document.getElementById('audit-log-host');
+  if(!host) return;
+  const logs = (typeof visitNotes!=='undefined'?visitNotes:[])
+    .filter(function(n){ return n.note_type==='admin_action'; })
+    .sort(function(a,b){ return new Date(b.created_at)-new Date(a.created_at); });
+  if(!logs.length){ host.innerHTML='<div style="font-size:12px;color:var(--ink-faint)">No activity recorded yet.</div>'; return; }
+
+  const pages = Math.ceil(logs.length / AUDIT_PAGE_SIZE);
+  if(auditLogPage >= pages) auditLogPage = pages-1;
+  if(auditLogPage < 0) auditLogPage = 0;
+  const start = auditLogPage * AUDIT_PAGE_SIZE;
+  const slice = logs.slice(start, start + AUDIT_PAGE_SIZE);
+
+  let html = '<div style="border:1px solid var(--cream-dark);border-radius:var(--r2);overflow:hidden">';
+  html += slice.map(function(n){
+    const when = new Date(n.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+    const who = esc(n.created_by||'unknown');
+    return '<div style="padding:9px 11px;border-bottom:1px solid var(--cream-mid);font-size:12px">'
+      + '<div style="color:var(--ink)">'+esc(n.note||'')+'</div>'
+      + '<div style="font-size:11px;color:var(--ink-faint);margin-top:2px">'+who+' · '+when+'</div></div>';
+  }).join('');
+  html += '</div>';
+  if(pages > 1){
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:12px">'
+      + '<button class="btn btn-o sm" style="font-size:11px" '+(auditLogPage<=0?'disabled':'')+' onclick="auditLogPrev()">‹ Newer</button>'
+      + '<span style="color:var(--ink-faint)">Page '+(auditLogPage+1)+' of '+pages+' · '+logs.length+' entries</span>'
+      + '<button class="btn btn-o sm" style="font-size:11px" '+(auditLogPage>=pages-1?'disabled':'')+' onclick="auditLogNext()">Older ›</button>'
+      + '</div>';
+  }
+  host.innerHTML = html;
+}
+function auditLogPrev(){ if(auditLogPage>0){ auditLogPage--; renderAuditLog(); } }
+function auditLogNext(){ auditLogPage++; renderAuditLog(); }

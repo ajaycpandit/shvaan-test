@@ -64,6 +64,27 @@ async function dbUpdateDog(id,d){ return await sbFetch('dogs?id=eq.'+encodeURICo
 async function dbDeleteDog(id){ return await sbFetch('dogs?id=eq.'+encodeURIComponent(id), 'DELETE'); }
 async function dbGetNotes(){ return await sbFetch('visit_notes?order=created_at.desc').catch(()=>[]) || []; }
 async function dbAddNote(n){ return await sbFetch('visit_notes','POST',n).catch(e=>{throw e;}); }
+
+// Write an audit-log entry (reuses visit_notes) recording a deletion and who did it.
+async function logDeletion(kind, info){
+  const note = {
+    id: Date.now().toString()+Math.random().toString(36).slice(2),
+    dog_id: info.dog_id || null,
+    dog_name: info.dog_name || '',
+    note_type: 'admin_action',
+    note: 'Deleted '+kind+(info.detail ? ' — '+info.detail : ''),
+    created_by: (typeof currentUser!=='undefined' && currentUser) ? currentUser.email : 'unknown',
+    created_at: new Date().toISOString()
+  };
+  try{
+    await dbAddNote(note);
+    if(typeof visitNotes!=='undefined') visitNotes.unshift(note);
+  }
+  catch(e){
+    // Non-fatal: the delete/reversal itself already succeeded. Log for debugging.
+    console.error('Audit log write failed:', e && e.message ? e.message : e);
+  }
+}
 async function dbUpdNote(id,d){ return await sbFetch('visit_notes?id=eq.'+encodeURIComponent(id),'PATCH',d); }
 async function dbDelNote(id){ return await sbFetch('visit_notes?id=eq.'+encodeURIComponent(id),'DELETE'); }
 async function dbUpsertDogs(arr){ return await sbFetch('dogs', 'POST', arr); } // used by import

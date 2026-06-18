@@ -102,12 +102,48 @@ function openVaccDetail(){
 }
 
 async function deleteDog(id) {
-  if(!confirm('Remove this dog profile?')) return;
+  const dog = dogs.find(d=>d.id===id);
+  const dogName = dog ? (dog.dog_name||'this dog') : 'this dog';
+  // Find linked records so nothing is orphaned
+  const linkedReqs = (typeof requests!=='undefined'?requests:[]).filter(r =>
+    r.dog_id===id || (r.dog_ids && r.dog_ids.indexOf(id)!==-1));
+  const linkedBookings = (typeof bookings!=='undefined'?bookings:[]).filter(b =>
+    (b.entries||[]).some(e => e.dogId===id || e.dog_id===id));
+
+  let msg = 'Remove '+dogName+'\u2019s profile?';
+  if(linkedReqs.length || linkedBookings.length){
+    msg += '\n\nThis dog has '
+      + (linkedReqs.length ? linkedReqs.length+' reservation'+(linkedReqs.length!==1?'s':'') : '')
+      + (linkedReqs.length && linkedBookings.length ? ' and ' : '')
+      + (linkedBookings.length ? linkedBookings.length+' invoice/booking record'+(linkedBookings.length!==1?'s':'') : '')
+      + '. These will also be removed so nothing is left orphaned.\n\nThis cannot be undone.';
+  }
+  if(!confirm(msg)) return;
+
   setSyncState('busy');
   try {
+    // Remove linked reservations first
+    for(const r of linkedReqs){
+      try{ await dbDelReq(r.id); }catch(e){ console.warn('Could not delete linked request', r.id, e); }
+    }
+    // Remove linked bookings
+    for(const b of linkedBookings){
+      try{ await dbDeleteBooking(b.id); }catch(e){ console.warn('Could not delete linked booking', b.id, e); }
+    }
+    // Then the dog itself
     await dbDeleteDog(id);
+    // Update local state
+    const reqIds = new Set(linkedReqs.map(r=>r.id));
+    const bkIds = new Set(linkedBookings.map(b=>b.id));
+    if(typeof requests!=='undefined') requests = requests.filter(r=>!reqIds.has(r.id));
+    if(typeof bookings!=='undefined') bookings = bookings.filter(b=>!bkIds.has(b.id));
     dogs = dogs.filter(d=>d.id!==id); selDogs.delete(id);
-    setSyncState('ok'); renderDogList(); renderDD(); renderReqDD(); updateBadges(); toast('Dog removed.');
+    setSyncState('ok');
+    renderDogList(); renderDD(); renderReqDD(); updateBadges();
+    if(typeof renderDashboard==='function') renderDashboard();
+    if(typeof renderRequests==='function') renderRequests();
+    const extra = (linkedReqs.length||linkedBookings.length) ? ' (and '+(linkedReqs.length+linkedBookings.length)+' linked record'+((linkedReqs.length+linkedBookings.length)!==1?'s':'')+')' : '';
+    toast('Dog removed'+extra+'.');
   } catch(e) { setSyncState('err'); toast('Error: '+e.message, true); }
 }
 

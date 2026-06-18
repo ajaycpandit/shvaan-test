@@ -105,6 +105,7 @@ function renderDashboard(){
   if(typeof renderWeekAvail === 'function') renderWeekAvail();
   if(typeof renderDayNavigation === 'function') renderDayNavigation();
   if(typeof renderTrends === 'function') renderTrends();
+  if(typeof renderOutlook === 'function') renderOutlook();
 }
 
 /* ── Week availability strip ──────────────────────────────────
@@ -137,7 +138,7 @@ function renderWeekAvail(){
     else if(avail===1){ bg='rgba(217,164,65,0.16)'; bar='var(--gold)'; availColor='var(--brown-dark)'; }
     const dow = d.toLocaleDateString('en-US',{weekday:'short'});
     const dnum = d.getDate();
-    return '<div onclick="openDayMo(\''+ds+'\')" style="flex:1;min-width:0;cursor:pointer;position:relative;background:'+bg+';border:1px solid '+(isToday?'var(--brown)':'var(--cream-dark)')+';border-radius:var(--r2);padding:9px 4px 8px;text-align:center;overflow:hidden">'
+    return '<div onclick="openDayMo(\''+ds+'\')" style="flex:0 0 auto;width:62px;cursor:pointer;position:relative;background:'+bg+';border:1px solid '+(isToday?'var(--brown)':'var(--cream-dark)')+';border-radius:var(--r2);padding:9px 4px 8px;text-align:center;overflow:hidden;scroll-snap-align:start">'
       + '<div style="position:absolute;top:0;left:0;width:100%;height:3px;background:'+bar+'"></div>'
       + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint)">'+dow+'</div>'
       + '<div style="font-size:15px;font-weight:700;color:'+(isToday?'var(--brown-dark)':'var(--ink-mid)')+';margin:1px 0 4px">'+dnum+'</div>'
@@ -154,7 +155,7 @@ function renderWeekAvail(){
     + '<button class="btn btn-o sm" style="font-size:11px;padding:5px 9px" onclick="weekAvailNext()">›</button>'
     + '</div></div>'
     + '<div style="font-size:12px;color:var(--ink-faint);margin-bottom:10px">'+esc(rangeLabel)+' · capacity '+cap+'</div>'
-    + '<div style="display:flex;gap:6px">'+cells+'</div>'
+    + '<div style="display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:4px">'+cells+'</div>'
     + '<div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--ink-faint)">'
     + '<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--forest)"></span>Open</span>'
     + '<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--gold)"></span>1 left</span>'
@@ -419,14 +420,24 @@ function renderDayNavigation(){
   if(list.length === 0){
     html += '<div style="padding:14px;text-align:center;color:var(--ink-faint)">No dogs for this day</div>';
   } else {
+    const todayKey = new Date().toISOString().split('T')[0];
+    const fmtWhen = (dt) => {
+      if(isNaN(dt)) return '';
+      const t = dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      const key = dt.toISOString().split('T')[0];
+      const dateLabel = key===todayKey ? 'Today' : dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      return dateLabel + ' · ' + t;
+    };
     list.forEach(r => {
       const ci = new Date(r.actual_checkin || r.checkin);
-      const ciTime = ci.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      const co = new Date(r.actual_checkout || r.checkout);
       let label, color;
-      if(r.status === 'checked_in'){ label = 'Currently boarding · since ' + ciTime; color = 'var(--forest)'; }
-      else if(r.status === 'completed'){ label = 'Checked out'; color = 'var(--ink-faint)'; }
-      else if(r.status === 'confirmed'){ label = 'Arriving ' + ciTime; color = 'var(--bluep-text,var(--ink-mid))'; }
-      else { label = 'Requested · ' + ciTime; color = 'var(--ink-faint)'; }
+      if(r.status === 'checked_in'){ label = 'Boarding since ' + fmtWhen(ci); color = 'var(--forest)'; }
+      else if(r.status === 'completed'){
+        label = 'Checked out ' + (isNaN(co) ? '' : fmtWhen(co)); color = 'var(--ink-faint)';
+      }
+      else if(r.status === 'confirmed'){ label = 'Arriving ' + fmtWhen(ci); color = 'var(--bluep-text,var(--ink-mid))'; }
+      else { label = 'Requested · ' + fmtWhen(ci); color = 'var(--ink-faint)'; }
 
       html += '<div style="padding:11px;border-bottom:1px solid var(--cream-mid);display:flex;align-items:center;gap:10px">'
         + '<div style="font-size:16px">' + (r.service==='boarding'?'🏡':'☀️') + '</div>'
@@ -440,6 +451,9 @@ function renderDayNavigation(){
         html += '<button class="btn btn-o sm" style="font-size:11px" onclick="goPage(\'requests\')">Confirm first</button>';
       } else if(r.status === 'checked_in'){
         html += '<button class="btn btn-g sm" style="font-size:11px" onclick="quickCheckOut(\''+r.id+'\')">Check Out</button>';
+      } else if(r.status === 'completed'){
+        const click = r.booking_id ? ' style="cursor:pointer" onclick="openInv(\''+r.booking_id+'\')" title="View invoice"' : '';
+        html += '<span class="bdg"'+click+' style="background:var(--cream-mid);color:var(--ink-faint);font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap'+(r.booking_id?';cursor:pointer':'')+'">✓ Checked out</span>';
       } else {
         html += '<button class="btn btn-o sm" style="font-size:11px" onclick="goPage(\'requests\')">View</button>';
       }
@@ -734,4 +748,89 @@ function trendBody(){
   }
 
   return empty;
+}
+
+/* ═══════════════════════════════════════
+   Booking Outlook — occupancy across a selectable horizon
+   (1 week / 2 weeks / 3 weeks / month)
+═══════════════════════════════════════ */
+let outlookDays = 7; // 7, 14, 21, or 30
+function setOutlook(n){ outlookDays = n; renderOutlook(); }
+function renderOutlook(){
+  const host = document.getElementById('dash-outlook');
+  if(!host) return;
+  const cap = (typeof settings!=='undefined' && settings.capacity) ? settings.capacity : 12;
+  const occFn = (typeof dayOccupancy==='function') ? dayOccupancy : function(){return 0;};
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // Build per-day data across the horizon
+  const data = [];
+  for(let i=0;i<outlookDays;i++){
+    const d = new Date(today); d.setDate(d.getDate()+i);
+    const ds = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    data.push({ date:d, ds:ds, count:occFn(ds) });
+  }
+  // Summary stats
+  const counts = data.map(d=>d.count);
+  const totalDogNights = counts.reduce((a,b)=>a+b,0);
+  const avg = (totalDogNights / outlookDays);
+  const peak = Math.max.apply(null, counts.concat([0]));
+  const peakDay = data.find(d=>d.count===peak);
+  const fullDays = data.filter(d=>d.count>=cap).length;
+  const nearDays = data.filter(d=>d.count===cap-1).length;
+  const emptyDays = data.filter(d=>d.count===0).length;
+  const avgPct = Math.round((avg/cap)*100);
+
+  // Distinct upcoming reservations starting in the window (arrivals)
+  const horizonEnd = new Date(today); horizonEnd.setDate(horizonEnd.getDate()+outlookDays);
+  const arrivals = (typeof requests!=='undefined'?requests:[]).filter(function(r){
+    if(r.status!=='confirmed' && r.status!=='checked_in' && r.status!=='pending') return false;
+    const ci = new Date(r.checkin); if(isNaN(ci)) return false;
+    return ci>=today && ci<horizonEnd;
+  }).length;
+
+  const periodLabel = outlookDays===7?'Next 7 days':outlookDays===14?'Next 2 weeks':outlookDays===21?'Next 3 weeks':'Next 30 days';
+
+  // Mini bar chart (one bar per day; width adapts)
+  const maxScale = Math.max(cap, peak);
+  const barW = outlookDays<=7?28:outlookDays<=14?16:outlookDays<=21?11:8;
+  const bars = data.map(function(d){
+    const h = maxScale>0 ? Math.round((d.count/maxScale)*70) : 0;
+    let color = 'var(--forest)';
+    if(d.count>=cap) color='var(--danger)';
+    else if(d.count>=cap-1) color='var(--gold)';
+    const isToday = d.ds === (today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0'));
+    const showLbl = outlookDays<=14 || d.date.getDate()===1 || d.date.getDay()===1;
+    return '<div onclick="openDayMo(\''+d.ds+'\')" title="'+d.date.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})+': '+d.count+'/'+cap+'" style="flex:0 0 auto;width:'+barW+'px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">'
+      + '<div style="font-size:9px;color:var(--ink-faint);height:11px">'+(d.count||'')+'</div>'
+      + '<div style="width:100%;height:70px;display:flex;align-items:flex-end"><div style="width:100%;height:'+Math.max(h,2)+'px;background:'+color+';border-radius:3px 3px 0 0;opacity:'+(isToday?'1':'0.85')+'"></div></div>'
+      + '<div style="font-size:8px;color:'+(isToday?'var(--brown-dark)':'var(--ink-faint)')+';font-weight:'+(isToday?'700':'400')+'">'+(showLbl?d.date.getDate():'')+'</div>'
+      + '</div>';
+  }).join('');
+
+  const tabs = [[7,'1 wk'],[14,'2 wk'],[21,'3 wk'],[30,'Month']].map(function(t){
+    const on = outlookDays===t[0];
+    return '<button class="btn '+(on?'btn-p':'btn-o')+' sm" style="font-size:11px;padding:5px 11px" onclick="setOutlook('+t[0]+')">'+t[1]+'</button>';
+  }).join('');
+
+  const stat = (big, label, color) => '<div style="flex:1;min-width:78px;text-align:center;padding:8px 4px;background:var(--cream-mid);border-radius:var(--r2)">'
+    + '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;line-height:1;color:'+(color||'var(--ink)')+'">'+big+'</div>'
+    + '<div style="font-size:10px;color:var(--ink-faint);margin-top:3px">'+label+'</div></div>';
+
+  host.innerHTML = '<div class="card">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap">'
+    + '<div class="ct" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>Booking Outlook</div>'
+    + '<div style="display:flex;gap:5px;flex-wrap:wrap">'+tabs+'</div>'
+    + '</div>'
+    + '<div style="font-size:12px;color:var(--ink-faint);margin-bottom:12px">'+periodLabel+' · capacity '+cap+'/day</div>'
+    + '<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">'
+    + stat(arrivals, 'Arrivals', 'var(--brown-dark)')
+    + stat(avgPct+'%', 'Avg occupancy', avgPct>=85?'var(--danger)':avgPct>=60?'var(--gold)':'var(--forest)')
+    + stat(peak+'/'+cap, 'Peak day', peak>=cap?'var(--danger)':'var(--ink)')
+    + stat(fullDays, 'Full days', fullDays>0?'var(--danger)':'var(--ink)')
+    + stat(emptyDays, 'Empty days', 'var(--ink)')
+    + '</div>'
+    + '<div style="display:flex;gap:3px;overflow-x:auto;align-items:flex-end;padding-bottom:4px;-webkit-overflow-scrolling:touch">'+bars+'</div>'
+    + (peakDay && peak>0 ? '<div style="font-size:11px;color:var(--ink-faint);margin-top:8px">Busiest: '+peakDay.date.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})+' ('+peak+'/'+cap+')'+(fullDays>0?' · '+fullDays+' day'+(fullDays!==1?'s':'')+' fully booked':'')+'</div>' : '<div style="font-size:11px;color:var(--ink-faint);margin-top:8px">No bookings in this period yet.</div>')
+    + '</div>';
 }

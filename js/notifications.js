@@ -20,6 +20,27 @@ function getNotifs(){
       else if(diff<=30) notifs.push({type:'vacc',icon:'⚠️',title:d.dog_name+"'s "+nm+' expires in '+diff+'d',sub:'Due '+exp.toLocaleDateString('en-US',{month:'short',day:'numeric'}),vacc:{dog:d,name:nm,date:dt,diff}});
     });
   });
+  // HIGH PRIORITY: dogs with an UPCOMING stay whose vaccinations are expired/expiring before arrival
+  const upcomingByDog={};
+  (typeof requests!=='undefined'?requests:[]).forEach(r=>{
+    if(r.status!=='confirmed' && r.status!=='checked_in' && r.status!=='pending') return;
+    const ci=new Date(r.checkin); if(isNaN(ci)||ci<now) return;
+    const ids=(r.dog_ids&&r.dog_ids.length)?r.dog_ids:(r.dog_id?[r.dog_id]:[]);
+    ids.forEach(id=>{ if(!upcomingByDog[id]||ci<upcomingByDog[id]) upcomingByDog[id]=ci; });
+  });
+  dogs.forEach(d=>{
+    const stayDate=upcomingByDog[d.id];
+    if(!stayDate) return;
+    [['Rabies',d.vacc_rabies],['DHPP',d.vacc_dhpp],['Bordetella',d.vacc_bordetella]].forEach(([nm,dt])=>{
+      if(!dt) return;
+      const exp=new Date(dt);
+      // Flag if the vaccine expires on or before the upcoming stay
+      if(exp <= stayDate){
+        const diff=Math.ceil((exp-now)/86400000);
+        notifs.unshift({type:'vacc',icon:'🚨',title:d.dog_name+' has a stay '+stayDate.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' but '+nm+(diff<0?' is EXPIRED':' expires first'),sub:'Vaccination must be current before check-in',vacc:{dog:d,name:nm,date:dt,diff},priority:true});
+      }
+    });
+  });
   return notifs;
 }
 function vaccEmailLink(v){
@@ -37,7 +58,8 @@ function buildNotifPanel(){
   ['nb-req','bnb-req'].forEach(id=>{ const el=document.getElementById(id); if(el){ el.style.display=pend?'':'none'; el.textContent=pend; } });
   const html=cnt===0?'<div class="notif-empty">🎉 All clear — no alerts!</div>':notifs.map(n=>{
     const emailBtn=n.vacc?`<a href="${vaccEmailLink(n.vacc)}" onclick="event.stopPropagation()" style="display:inline-block;margin-top:5px;font-size:11px;font-weight:600;color:var(--blue);text-decoration:none;border:1px solid #BCCFE8;background:var(--bluep);border-radius:99px;padding:2px 9px">✉️ Email reminder</a>`:'';
-    return `<div class="notif-item"><div class="notif-icon ${n.type}">${n.icon}</div><div><div class="notif-title">${esc(n.title)}</div><div class="notif-sub">${esc(n.sub)}</div>${emailBtn}</div></div>`;
+    const prioStyle=n.priority?' style="background:rgba(193,79,63,0.08);border-left:3px solid var(--danger)"':'';
+    return `<div class="notif-item"${prioStyle}><div class="notif-icon ${n.type}">${n.icon}</div><div><div class="notif-title"${n.priority?' style="color:var(--danger)"':''}>${esc(n.title)}</div><div class="notif-sub">${esc(n.sub)}</div>${emailBtn}</div></div>`;
   }).join('');
   const panel='<div class="notif-header"><span>Notifications'+(cnt?' ('+cnt+')':'')+'</span><button style="font-size:11px;background:none;border:none;cursor:pointer;color:var(--ink-faint)" onclick="closeNotif()">Close</button></div><div class="notif-list">'+html+'</div>';
   ['notif-panel-desk','notif-panel-mob'].forEach(id=>{ const el=document.getElementById(id); if(el) el.innerHTML=panel; });

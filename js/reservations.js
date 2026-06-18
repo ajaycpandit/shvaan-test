@@ -118,13 +118,37 @@ function renderRequests(){
 }
 async function updateReq(id,status){
   setSyncState('busy');
-  try{ await dbUpdReq(id,{status}); const r=requests.find(x=>x.id===id); if(r) r.status=status; setSyncState('ok'); renderRequests(); updateBadges(); if(typeof renderCalendar==='function'&&document.getElementById('pg-calendar').classList.contains('active')){renderCalendar();renderUpcoming();} toast('Reservation '+status.replace('_',' ')+'.'); }
+  try{ await dbUpdReq(id,{status}); const r=requests.find(x=>x.id===id); if(r) r.status=status; setSyncState('ok'); renderRequests(); updateBadges(); if(typeof refreshActive==='function') refreshActive(); if(typeof renderCalendar==='function'&&document.getElementById('pg-calendar').classList.contains('active')){renderCalendar();renderUpcoming();} toast('Reservation '+status.replace('_',' ')+'.'); }
   catch(e){ setSyncState('err'); toast('Error: '+e.message, true); }
 }
 async function delRequest(id){
-  if(!confirm('Delete this reservation?')) return;
+  const r = requests.find(x=>x.id===id);
+  const hasBooking = r && r.booking_id;
+  const msg = hasBooking
+    ? 'Delete this reservation?\n\nThis will also remove its invoice/booking from history. This cannot be undone.'
+    : 'Delete this reservation?';
+  if(!confirm(msg)) return;
   setSyncState('busy');
-  try{ await dbDelReq(id); requests=requests.filter(r=>r.id!==id); setSyncState('ok'); renderRequests(); updateBadges(); toast('Reservation deleted.'); }
+  try{
+    // Remove the linked booking (history record) too, so the two stay in sync
+    if(r && r.booking_id){
+      try{ await dbDeleteBooking(r.booking_id); if(typeof bookings!=='undefined') bookings=bookings.filter(b=>b.id!==r.booking_id); }
+      catch(e){ console.warn('Could not delete linked booking', r.booking_id, e); }
+    }
+    await dbDelReq(id);
+    requests=requests.filter(x=>x.id!==id);
+    // Audit log
+    await logDeletion('reservation', {
+      dog_id: r?r.dog_id:null,
+      dog_name: r?r.dog_name:'',
+      detail: (r?(r.dog_name||'reservation'):'reservation') + (r&&r.status?(' ('+r.status+')'):'') + (hasBooking?' + invoice':'')
+    });
+    setSyncState('ok');
+    renderRequests(); updateBadges();
+    if(typeof renderDashboard==='function') renderDashboard();
+    if(typeof refreshActive==='function') refreshActive();
+    toast('Reservation deleted.');
+  }
   catch(e){ setSyncState('err'); toast('Error: '+e.message, true); }
 }
 
@@ -306,6 +330,7 @@ async function saveEditReq(){
     await dbUpdReq(r.id, upd);
     Object.assign(r, upd);
     setSyncState('ok'); closeEditReq(); renderRequests(); updateBadges();
+    if(typeof refreshActive==='function') refreshActive();
     if(document.getElementById('pg-calendar').classList.contains('active')){renderCalendar();renderUpcoming();}
     toast('Reservation updated.');
   }catch(e){ setSyncState('err'); toast('Error: '+e.message, true); }

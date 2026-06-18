@@ -16,6 +16,7 @@ function finPreset(p){
   renderFinance();
 }
 function renderFinance(){
+  if(typeof renderOutstanding==='function') renderOutstanding();
   const fromV=document.getElementById('fin-from').value, toV=document.getElementById('fin-to').value;
   if(!fromV||!toV) return;
   const from=new Date(fromV+'T00:00:00'), to=new Date(toV+'T23:59:59');
@@ -88,4 +89,41 @@ async function exportFinance(){
     XLSX.writeFile(wb,'shvaan-income-'+fromV+'-to-'+toV+'.xlsx');
     toast('Exported '+inRange.length+' invoice'+(inRange.length!==1?'s':'')+'.');
   }catch(e){ toast('Export failed: '+e.message, true); }
+}
+
+// Outstanding payments — ALL unpaid bookings regardless of date range, oldest first, with aging.
+function renderOutstanding(){
+  const host=document.getElementById('fin-outstanding');
+  if(!host) return;
+  const unpaid=(typeof bookings!=='undefined'?bookings:[]).filter(b=>!b.paid)
+    .sort((a,b)=> new Date(a.checkout||a.saved_at) - new Date(b.checkout||b.saved_at)); // oldest first
+  if(!unpaid.length){
+    host.innerHTML='<div style="padding:12px 0;font-size:13px;color:var(--forest);font-weight:600">✓ All caught up — no outstanding payments.</div>';
+    return;
+  }
+  const totalOwed=unpaid.reduce((s,b)=>s+parseFloat(b.grand_total||0),0);
+  const now=new Date();
+  const fd=s=>new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  let rows=unpaid.map(b=>{
+    const names=(b.entries||[]).map(e=>e.dogName||e.dog_name||'').filter(Boolean).join(', ')||'—';
+    const owner=(b.entries&&b.entries[0]&&(b.entries[0].ownerName||b.entries[0].owner_name))||'';
+    const checkout=new Date(b.checkout||b.saved_at);
+    const ageDays=isNaN(checkout)?0:Math.max(0,Math.floor((now-checkout)/86400000));
+    let ageColor='var(--ink-faint)', ageLabel=ageDays+'d';
+    if(ageDays>=30){ ageColor='var(--danger)'; ageLabel=ageDays+'d overdue'; }
+    else if(ageDays>=14){ ageColor='var(--gold)'; ageLabel=ageDays+'d'; }
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--cream-mid)">
+      <div style="font-size:16px">${b.service==='boarding'?'🏡':'☀️'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(names)}${owner?` <span style="font-weight:400;color:var(--ink-faint)">· ${esc(owner)}</span>`:''}</div>
+        <div style="font-size:11px;color:var(--ink-faint)">Checked out ${fd(b.checkout||b.saved_at)} · <span style="color:${ageColor};font-weight:600">${ageLabel}</span></div>
+      </div>
+      <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--ink);white-space:nowrap">$${parseFloat(b.grand_total||0).toFixed(2)}</div>
+      <button class="btn btn-g sm" style="font-size:11px" onclick="openPayment('${b.id}')">Mark Paid</button>
+    </div>`;
+  }).join('');
+  host.innerHTML='<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">'
+    + '<div style="font-size:12px;color:var(--ink-faint)">'+unpaid.length+' unpaid invoice'+(unpaid.length!==1?'s':'')+' · all dates</div>'
+    + '<div style="font-family:\'DM Serif Display\',serif;font-size:20px;color:var(--danger)">$'+totalOwed.toFixed(2)+' owed</div>'
+    + '</div>' + rows;
 }

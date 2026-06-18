@@ -2,6 +2,7 @@
    HISTORY
 ═══════════════════════════════════════ */
 let histFilterDogs=new Set(), histFilterOwners=new Set(), histDdOpen=false, histoDdOpen=false;
+let histPage=0;
 // Build a sorted unique owner list from dogs + bookings
 function allOwnerNames(){
   const s=new Set();
@@ -18,7 +19,7 @@ function renderHistDDList(){
   list.innerHTML=filtered.map(d=>`<div class="dd-item${histFilterDogs.has(d.dog_name)?' sel':''}" onclick="toggleHistDog('${esc(d.dog_name).replace(/'/g,"\\'")}')"><div class="dd-ava">${d.photo?`<img src="${d.photo}" alt="">`:'🐶'}</div><div style="flex:1;min-width:0"><div class="dd-name">${esc(d.dog_name)}</div><div class="dd-sub">${esc(d.owner_name)}</div></div><div class="dd-chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>`).join('');
 }
 function toggleHistDD(){ histDdOpen=!histDdOpen; document.getElementById('hist-dd-menu').style.display=histDdOpen?'block':'none'; document.getElementById('hist-dd-btn').classList.toggle('open',histDdOpen); if(histDdOpen){ const s=document.getElementById('hist-dd-search'); if(s){ s.value=''; renderHistDDList(); setTimeout(()=>s.focus(),50);} } }
-function toggleHistDog(name){ if(histFilterDogs.has(name)) histFilterDogs.delete(name); else histFilterDogs.add(name); renderHistDDList(); renderHistFilterUI(); renderHistory(); }
+function toggleHistDog(name){ histPage=0; if(histFilterDogs.has(name)) histFilterDogs.delete(name); else histFilterDogs.add(name); renderHistDDList(); renderHistFilterUI(); renderHistory(); }
 /* Owner dropdown */
 function renderHistoDDList(){
   const list=document.getElementById('histo-dd-list'); if(!list) return;
@@ -28,7 +29,7 @@ function renderHistoDDList(){
   list.innerHTML=owners.map(o=>`<div class="dd-item${histFilterOwners.has(o)?' sel':''}" onclick="toggleHistOwner('${esc(o).replace(/'/g,"\\'")}')"><div class="dd-ava">👤</div><div style="flex:1;min-width:0"><div class="dd-name">${esc(o)}</div></div><div class="dd-chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></div>`).join('');
 }
 function toggleHistoDD(){ histoDdOpen=!histoDdOpen; document.getElementById('histo-dd-menu').style.display=histoDdOpen?'block':'none'; document.getElementById('histo-dd-btn').classList.toggle('open',histoDdOpen); if(histoDdOpen){ const s=document.getElementById('histo-dd-search'); if(s){ s.value=''; renderHistoDDList(); setTimeout(()=>s.focus(),50);} } }
-function toggleHistOwner(name){ if(histFilterOwners.has(name)) histFilterOwners.delete(name); else histFilterOwners.add(name); renderHistoDDList(); renderHistFilterUI(); renderHistory(); }
+function toggleHistOwner(name){ histPage=0; if(histFilterOwners.has(name)) histFilterOwners.delete(name); else histFilterOwners.add(name); renderHistoDDList(); renderHistFilterUI(); renderHistory(); }
 function renderHistFilterUI(){
   const dl=document.getElementById('hist-dd-lbl'), ol=document.getElementById('histo-dd-lbl');
   if(dl){ dl.textContent=histFilterDogs.size?histFilterDogs.size+' dog'+(histFilterDogs.size>1?'s':''):'All dogs'; dl.style.color=histFilterDogs.size?'var(--ink)':'var(--ink-faint)'; }
@@ -59,7 +60,14 @@ function renderHistory() {
   if(!list.length){c.innerHTML='<div class="es"><span class="ei">🔍</span><p>No bookings match your filter.</p></div>';return;}
   const fd=s=>new Date(s).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   const ft=s=>new Date(s).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-  c.innerHTML='<div style="display:flex;flex-direction:column;gap:11px">'+list.map(b=>{
+  // Newest first, then paginate so the page doesn't grow without bound
+  list.sort((a,b)=> new Date(b.saved_at||b.checkout||b.checkin) - new Date(a.saved_at||a.checkout||a.checkin));
+  const HIST_PAGE_SIZE = 12;
+  const histPages = Math.ceil(list.length / HIST_PAGE_SIZE);
+  if(histPage >= histPages) histPage = histPages-1;
+  if(histPage < 0) histPage = 0;
+  const pageList = list.slice(histPage*HIST_PAGE_SIZE, histPage*HIST_PAGE_SIZE + HIST_PAGE_SIZE);
+  c.innerHTML='<div style="display:flex;flex-direction:column;gap:11px">'+pageList.map(b=>{
     const entries=b.entries||[];
     const svcPill=b.service==='boarding'?'<span class="sp sp-b">🏡 Boarding</span>':'<span class="sp sp-d">☀️ Day Care</span>';
     const dpills=entries.map(e=>`<div class="hdp"><div class="hdpa">${e.photo?`<img src="${e.photo}" alt="">`:'🐶'}</div><span class="hdn">${esc(e.dogName||e.dog_name||'')}</span></div>`).join('');
@@ -80,13 +88,46 @@ function renderHistory() {
         <button class="btn btn-d sm" onclick="deleteBooking('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete</button>
       </div>
     </div>`;
-  }).join('')+'</div>';
+  }).join('')+'</div>'
+  + (histPages>1 ? '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:12px">'
+      + '<button class="btn btn-o sm" '+(histPage<=0?'disabled':'')+' onclick="histPagePrev()">‹ Newer</button>'
+      + '<span style="color:var(--ink-faint)">Page '+(histPage+1)+' of '+histPages+'</span>'
+      + '<button class="btn btn-o sm" '+(histPage>=histPages-1?'disabled':'')+' onclick="histPageNext()">Older ›</button>'
+      + '</div>' : '');
 }
+function histPagePrev(){ if(histPage>0){ histPage--; renderHistory(); window.scrollTo({top:0,behavior:'smooth'}); } }
+function histPageNext(){ histPage++; renderHistory(); window.scrollTo({top:0,behavior:'smooth'}); }
 
 async function deleteBooking(id) {
-  if(!confirm('Delete this booking?')) return;
+  // Find a completed reservation linked to this booking, so both stay in sync
+  const linkedReq = (typeof requests!=='undefined'?requests:[]).find(r=>r.booking_id===id);
+  const b = (typeof bookings!=='undefined'?bookings:[]).find(x=>x.id===id);
+  const msg = linkedReq
+    ? 'Delete this booking?\n\nThis will also remove its reservation from the Completed list. This cannot be undone.'
+    : 'Delete this booking?';
+  if(!confirm(msg)) return;
   setSyncState('busy');
-  try { await dbDeleteBooking(id); bookings=bookings.filter(b=>b.id!==id); setSyncState('ok'); renderHistory(); updateBadges(); toast('Booking deleted.'); }
+  try {
+    await dbDeleteBooking(id);
+    bookings=bookings.filter(x=>x.id!==id);
+    // Remove the linked reservation too
+    if(linkedReq){
+      try{ await dbDelReq(linkedReq.id); if(typeof requests!=='undefined') requests=requests.filter(r=>r.id!==linkedReq.id); }
+      catch(e){ console.warn('Could not delete linked reservation', linkedReq.id, e); }
+    }
+    // Audit log
+    const dn = (linkedReq && linkedReq.dog_name) || ((b&&b.entries&&b.entries[0]&&(b.entries[0].dogName||b.entries[0].dog_name))||'');
+    await logDeletion('booking', {
+      dog_id: linkedReq?linkedReq.dog_id:null,
+      dog_name: dn,
+      detail: (dn||'booking') + (b&&b.grand_total!=null?(' $'+parseFloat(b.grand_total).toFixed(2)):'') + (linkedReq?' + reservation':'')
+    });
+    setSyncState('ok');
+    renderHistory(); updateBadges();
+    if(typeof renderRequests==='function') renderRequests();
+    if(typeof refreshActive==='function') refreshActive();
+    toast('Booking deleted.');
+  }
   catch(e){ setSyncState('err'); toast('Error: '+e.message,true); }
 }
 
