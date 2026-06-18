@@ -213,3 +213,57 @@ async function removeStayPhoto(path) {
     toast('Photo deleted.');
   } catch (e) { setSyncState('err'); toast('Delete failed: ' + e.message, true); }
 }
+
+/* ── "Photos still stored" reminder ──────────────────────────────
+   Lists which reservation folders still have photos, so completed
+   stays whose photos weren't cleaned up are visible and not forgotten. */
+async function listReservationsWithPhotos(){
+  // List top-level "folders" (one per reservation id) in the bucket
+  try{
+    const r = await fetch(SB_URL + '/storage/v1/object/list/' + STAY_BUCKET, {
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+(authToken||SB_KEY),'Content-Type':'application/json'},
+      body: JSON.stringify({ prefix:'', limit:1000, sortBy:{column:'name',order:'asc'} })
+    });
+    if(!r.ok) return [];
+    const rows = await r.json().catch(()=>[]);
+    // Folders come back as entries with id===null (a prefix); files have an id.
+    return (rows||[]).filter(o=>o&&o.name&&o.id===null).map(o=>o.name);
+  }catch(e){ return []; }
+}
+
+async function renderPhotoReminder(){
+  const host = document.getElementById('photo-reminder');
+  if(!host) return;
+  let resIds = [];
+  try{ resIds = await listReservationsWithPhotos(); }catch(_){ host.innerHTML=''; return; }
+  // Only remind about COMPLETED reservations (active ones are expected to have photos)
+  const completed = (typeof requests!=='undefined'?requests:[])
+    .filter(r => r.status==='completed' && resIds.indexOf(r.id)!==-1);
+  if(!completed.length){ host.innerHTML=''; return; }
+  host.innerHTML = '<div class="card" style="border:1px solid var(--gold)">'
+    + '<div class="ct" style="margin-bottom:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>Photos to review &amp; clean up</div>'
+    + '<div style="font-size:12px;color:var(--ink-faint);margin-bottom:10px">These completed stays still have photos in storage. Send them to owners if you haven\u2019t, then delete to free space.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:7px">'
+    + completed.map(function(r){
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--cream-mid);border-radius:var(--r2)">'
+          + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">'+esc(r.dog_name||'')+'</div>'
+          + '<div style="font-size:11px;color:var(--ink-faint)">Checked out '+(r.actual_checkout?new Date(r.actual_checkout).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'')+'</div></div>'
+          + '<button class="btn btn-o sm" onclick="openStayPhotos(\''+r.id+'\')">View</button>'
+          + '<button class="btn btn-d sm" onclick="cleanupStayPhotos(\''+r.id+'\')">Delete</button>'
+          + '</div>';
+      }).join('')
+    + '</div></div>';
+}
+
+async function cleanupStayPhotos(reservationId){
+  const r = (typeof requests!=='undefined'?requests:[]).find(x=>x.id===reservationId);
+  if(!confirm('Delete all stay photos for '+((r&&r.dog_name)||'this reservation')+'?\n\nThis cannot be undone. Make sure you\u2019ve sent them to the owner first.')) return;
+  setSyncState('busy');
+  try{
+    const n = await deleteStayPhotos(reservationId);
+    setSyncState('ok');
+    toast(n+' photo'+(n!==1?'s':'')+' deleted.');
+    await renderPhotoReminder();
+  }catch(e){ setSyncState('err'); toast('Delete failed: '+e.message, true); }
+}

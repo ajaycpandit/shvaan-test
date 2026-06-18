@@ -106,6 +106,7 @@ function renderDashboard(){
   if(typeof renderDayNavigation === 'function') renderDayNavigation();
   if(typeof renderTrends === 'function') renderTrends();
   if(typeof renderOutlook === 'function') renderOutlook();
+  if(typeof renderPhotoReminder === 'function') renderPhotoReminder();
 }
 
 /* ── Week availability strip ──────────────────────────────────

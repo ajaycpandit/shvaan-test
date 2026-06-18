@@ -153,6 +153,7 @@ function renderCustHistory(){
           <span style="font-size:11px;font-weight:600;color:${stColor}">${stLabel}</span>
         </div>
         <div style="font-size:12px;color:var(--ink-light);margin-top:8px">${fd(r.checkin)} ${ft(r.checkin)} → ${fd(r.checkout)} ${ft(r.checkout)}</div>
+        ${r.status==='checked_in'?`<button class="btn btn-o sm" style="margin-top:10px" onclick="openStayPhotos('${r.id}',{readOnly:true,title:'${esc(r.dog_name)} — Photos'})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>View Photos</button>`:''}
       </div>`;
     }).join('')+'</div>';
   } else { html+='<div style="font-size:13px;color:var(--ink-faint);margin-bottom:20px">No upcoming reservations. Use “Request Booking” to make one.</div>'; }
@@ -160,14 +161,17 @@ function renderCustHistory(){
   html+='<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:8px">Past Stays & Invoices</div>';
   const past=[...custBookings].sort((a,b)=>new Date(b.checkout||b.saved_at)-new Date(a.checkout||a.saved_at));
   if(past.length){
-    html+='<div style="display:flex;flex-direction:column;gap:10px">'+past.map(b=>`
+    html+='<div style="display:flex;flex-direction:column;gap:10px">'+past.map(b=>{
+      const linkedReq=(typeof custReqs!=='undefined'?custReqs:[]).find(r=>r.booking_id===b.id);
+      const photoBtn=linkedReq?`<button class="btn btn-o sm" style="margin-top:10px;margin-left:8px" onclick="openStayPhotos('${linkedReq.id}',{readOnly:true,title:'Stay Photos'})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>Photos</button>`:'';
+      return `
       <div class="card" style="margin:0">
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <div><div style="font-size:15px;font-weight:600;color:var(--ink)">${esc((b.entries||[]).map(e=>e.dogName||'').join(', '))}</div><div style="font-size:12px;color:var(--ink-faint);margin-top:2px">${fd(b.checkin)} → ${fd(b.checkout)}</div></div>
           <div style="text-align:right"><div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--ink)">$${parseFloat(b.grand_total).toFixed(2)}</div>${b.paid?'<div style="font-size:10px;color:var(--forest);font-weight:600">✓ Paid</div>':'<div style="font-size:10px;color:var(--danger);font-weight:600">● Unpaid</div>'}</div>
         </div>
-        <button class="btn btn-g sm" style="margin-top:10px" onclick="openInv('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>View Invoice</button>
-      </div>`).join('')+'</div>';
+        <button class="btn btn-g sm" style="margin-top:10px" onclick="openInv('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>View Invoice</button>${photoBtn}
+      </div>`;}).join('')+'</div>';
   } else { html+='<div style="font-size:13px;color:var(--ink-faint)">No past stays yet.</div>'; }
   c.innerHTML=html;
 }
