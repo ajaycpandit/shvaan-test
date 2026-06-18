@@ -111,3 +111,85 @@ function doLogout(){
 }
 tryRestoreSession();
 
+
+/* ═══════════════════════════════════════════════
+   Customer self-registration
+   Open registration with an approval flag baked in
+   (defaulted to approved). To require approval later,
+   change REGISTER_AUTO_APPROVE to false — no rebuild.
+═══════════════════════════════════════════════ */
+const REGISTER_AUTO_APPROVE = true; // flip to false later to require admin approval
+
+function showRegister(){
+  document.getElementById('login-screen').style.display='none';
+  const r=document.getElementById('register-screen');
+  r.style.display='flex';
+  // set logo from the same source the login screen uses
+  const lr=document.getElementById('logo-register');
+  if(lr){ try{ lr.src=(localStorage.getItem('shvaan_logo')||DEFAULT_LOGO); }catch(e){ const ll=document.getElementById('logo-login'); if(ll&&ll.src) lr.src=ll.src; } }
+  document.getElementById('register-err').textContent='';
+  document.getElementById('register-ok').textContent='';
+}
+function showLoginFromRegister(){
+  document.getElementById('register-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+}
+
+async function doRegister(){
+  const name=(document.getElementById('reg-name').value||'').trim();
+  const email=(document.getElementById('reg-email').value||'').trim().toLowerCase();
+  const pass=document.getElementById('reg-pass').value;
+  const pass2=document.getElementById('reg-pass2').value;
+  const errEl=document.getElementById('register-err');
+  const okEl=document.getElementById('register-ok');
+  const btn=document.getElementById('register-btn');
+  errEl.textContent=''; okEl.textContent='';
+  // Validate
+  if(!name){ errEl.textContent='Please enter your name.'; return; }
+  if(!email||email.indexOf('@')===-1){ errEl.textContent='Please enter a valid email.'; return; }
+  if(!pass||pass.length<6){ errEl.textContent='Password must be at least 6 characters.'; return; }
+  if(pass!==pass2){ errEl.textContent='Passwords don\u2019t match.'; return; }
+  btn.disabled=true; btn.style.opacity='.7'; btn.innerHTML='Creating account…';
+  try{
+    // 1) Create the auth user via Supabase signup
+    const res=await fetch(SB_URL+'/auth/v1/signup',{
+      method:'POST', headers:{'apikey':SB_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pass,data:{owner_name:name}})
+    });
+    const data=await res.json();
+    if(!res.ok){ throw new Error(data.error_description||data.msg||data.error||'Registration failed'); }
+
+    // 2) Create a linked customer profile row (role=customer, owner_name=name)
+    //    Uses the public/anon key; profile is keyed by email.
+    const profileBase={
+      id:(data.user&&data.user.id)||(Date.now().toString()+Math.random().toString(36).slice(2)),
+      email:email,
+      role:'customer',
+      owner_name:name,
+      created_at:new Date().toISOString()
+    };
+    try{
+      // Try with the approval flag; if the column doesn't exist yet, retry without it
+      try{ await sbFetch('profiles','POST',Object.assign({approved:REGISTER_AUTO_APPROVE}, profileBase)); }
+      catch(withFlagErr){ await sbFetch('profiles','POST',profileBase); }
+    }
+    catch(profErr){ console.warn('Profile creation issue (may already exist):',profErr); }
+
+    // 3) Outcome depends on whether Supabase requires email confirmation
+    const needsConfirm = data.user && !data.session && !data.access_token;
+    if(needsConfirm){
+      okEl.textContent='Account created! Please check your email to confirm, then sign in.';
+    } else {
+      okEl.textContent='Account created! You can now sign in.';
+    }
+    btn.disabled=false; btn.style.opacity='1'; btn.innerHTML='Create Account';
+    // Prefill the login email for convenience
+    setTimeout(function(){
+      showLoginFromRegister();
+      const le=document.getElementById('login-email'); if(le) le.value=email;
+    }, 1800);
+  }catch(e){
+    errEl.textContent=e.message;
+    btn.disabled=false; btn.style.opacity='1'; btn.innerHTML='Create Account';
+  }
+}
