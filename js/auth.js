@@ -168,16 +168,19 @@ async function doRegister(){
       owner_name:name,
       created_at:new Date().toISOString()
     };
+    let profileCreated=false;
     try{
       // Try with the approval flag; if the column doesn't exist yet, retry without it
-      try{ await sbFetch('profiles','POST',Object.assign({approved:REGISTER_AUTO_APPROVE}, profileBase)); }
-      catch(withFlagErr){ await sbFetch('profiles','POST',profileBase); }
+      try{ await sbFetch('profiles','POST',Object.assign({approved:REGISTER_AUTO_APPROVE}, profileBase)); profileCreated=true; }
+      catch(withFlagErr){ await sbFetch('profiles','POST',profileBase); profileCreated=true; }
     }
-    catch(profErr){ console.warn('Profile creation issue (may already exist):',profErr); }
+    catch(profErr){ console.error('Customer profile creation failed:',profErr); }
 
     // 3) Outcome depends on whether Supabase requires email confirmation
     const needsConfirm = data.user && !data.session && !data.access_token;
-    if(needsConfirm){
+    if(!profileCreated){
+      okEl.textContent='Account created. Note: please contact us to finish linking your profile.';
+    } else if(needsConfirm){
       okEl.textContent='Account created! Please check your email to confirm, then sign in.';
     } else {
       okEl.textContent='Account created! You can now sign in.';

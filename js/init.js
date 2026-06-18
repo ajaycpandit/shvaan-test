@@ -4,12 +4,20 @@
 async function init() {
   setLoadStatus('Signing in…');
   try {
-    // Load the current user's profile (role + permissions). Falls back to admin if none exists (first-run).
+    // Load the current user's profile (role + permissions).
     if(currentUser && currentUser.email){
       try{ myProfile = await dbGetMyProfile(currentUser.email); }catch(e){ myProfile=null; }
     }
-    // If a customer, route to the dedicated customer experience instead of the staff app.
-    if(myProfile && myProfile.role==='customer'){
+    // SECURITY: only explicit staff/admin roles get the staff app.
+    // Anyone else — including users whose profile is missing or who registered
+    // as customers — is routed to the limited customer experience (least privilege).
+    // A user must have a profile with role 'admin' or 'staff' to reach the staff app.
+    const isStaffRole = myProfile && (myProfile.role==='admin' || myProfile.role==='staff');
+    if(!isStaffRole){
+      // Ensure there's at least a minimal customer profile to drive the customer view
+      if(!myProfile){
+        myProfile = { email:(currentUser&&currentUser.email)||'', role:'customer', owner_name:'' };
+      }
       await initCustomer();
       return;
     }
