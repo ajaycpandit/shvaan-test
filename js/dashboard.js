@@ -143,7 +143,7 @@ function renderWeekAvail(){
     else { bg='var(--cream)'; bar='var(--forest)'; availColor='var(--forest)'; }
     const dow = d.toLocaleDateString('en-US',{weekday:'short'});
     const dnum = d.getDate();
-    return '<div onclick="openDayMo(\''+ds+'\')" style="flex:0 0 auto;width:62px;cursor:pointer;position:relative;background:'+bg+';border:1px solid '+(isToday?'var(--brown)':'var(--cream-dark)')+';border-radius:var(--r2);padding:9px 4px 8px;text-align:center;overflow:hidden;scroll-snap-align:start">'
+    return '<div onclick="openDayMo(\''+ds+'\')" style="flex:1 1 0;min-width:54px;cursor:pointer;position:relative;background:'+bg+';border:1px solid '+(isToday?'var(--brown)':'var(--cream-dark)')+';border-radius:var(--r2);padding:9px 4px 8px;text-align:center;overflow:hidden;scroll-snap-align:start">'
       + '<div style="position:absolute;top:0;left:0;width:100%;height:3px;background:'+bar+'"></div>'
       + '<div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint)">'+dow+'</div>'
       + '<div style="font-size:15px;font-weight:700;color:'+(isToday?'var(--brown-dark)':'var(--ink-mid)')+';margin:1px 0 4px">'+dnum+'</div>'
@@ -160,7 +160,7 @@ function renderWeekAvail(){
     + '<button class="btn btn-o sm" style="font-size:11px;padding:5px 9px" onclick="weekAvailNext()">›</button>'
     + '</div></div>'
     + '<div style="font-size:12px;color:var(--ink-faint);margin-bottom:10px">'+esc(rangeLabel)+' · capacity '+cap+'</div>'
-    + '<div style="display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding-bottom:4px">'+cells+'</div>'
+    + '<div style="display:flex;gap:6px;width:100%">'+cells+'</div>'
     + '<div style="display:flex;gap:14px;margin-top:10px;font-size:11px;color:var(--ink-faint)">'
     + '<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--forest)"></span>Open</span>'
     + '<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--gold)"></span>1 left</span>'
