@@ -18,7 +18,7 @@
 .fd label{display:block;font-size:13px;font-weight:600;color:var(--inm,#4F4339);margin-bottom:5px}
 .fd input,.fd textarea{width:100%;padding:11px 13px;border:1.5px solid var(--crd,#EAD9C6);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;background:var(--cream,#FBF6EF);color:var(--ink,#2A211A);outline:none}
 .fd input:focus,.fd textarea:focus{border-color:var(--br,#E07B2E)}
-.req{color:var(--dng,#D9534F)}
+.reqd{color:var(--dng,#D9534F);font-weight:700}
 .info{background:#EAF2F8;border-radius:10px;padding:12px 14px;font-size:13px;color:#345;margin-bottom:18px;line-height:1.5}
 .err{color:var(--dng,#D9534F);font-size:13px;margin-bottom:10px;min-height:16px}
 .note{font-size:12px;color:var(--inf,#B3A595);text-align:center;margin-top:12px}
@@ -65,22 +65,22 @@
     <div class="err" id="er-mg"></div>
 
     <div class="fd">
-      <label>Your Name <span class="req">*</span></label>
+      <label>Your Name <span class="reqd">*</span></label>
       <input type="text" id="mg-name" placeholder="Full name" required>
     </div>
 
     <div class="fd">
-      <label>Email <span class="req">*</span></label>
+      <label>Email <span class="reqd">*</span></label>
       <input type="email" id="mg-email" placeholder="you@example.com" required>
     </div>
 
     <div class="fd">
-      <label>Phone <span class="req">*</span></label>
+      <label>Phone <span class="reqd">*</span></label>
       <input type="tel" id="mg-phone" placeholder="(555) 123-4567" required>
     </div>
 
     <div class="fd">
-      <label>Dog's Name <span class="req">*</span></label>
+      <label>Dog's Name <span class="reqd">*</span></label>
       <input type="text" id="mg-dog-name" placeholder="Buddy, Max, Luna, etc." required>
     </div>
 
@@ -90,12 +90,12 @@
     </div>
 
     <div class="fd">
-      <label>Dog Age <span class="req">*</span></label>
+      <label>Dog Age <span class="reqd">*</span></label>
       <input type="number" id="mg-age" placeholder="Years" required min="0" max="30" step="0.1">
     </div>
 
     <div class="fd">
-      <label>What services are you interested in? <span class="req">*</span></label>
+      <label>What services are you interested in? <span class="reqd">*</span></label>
       <div style="display:flex;gap:10px;margin-top:8px">
         <label style="display:flex;align-items:center;gap:6px;font-weight:500">
           <input type="checkbox" id="mg-boarding" value="boarding"> Boarding
