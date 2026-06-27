@@ -155,6 +155,7 @@ function renderWeekAvail(){
   host.innerHTML = '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">'
     + '<div class="ct" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Availability this week</div>'
     + '<div style="display:flex;align-items:center;gap:6px">'
+    + '<button class="btn btn-o sm" style="font-size:11px;padding:5px 10px" onclick="openUpcoming()">📋 Upcoming stays</button>'
     + '<button class="btn btn-o sm" style="font-size:11px;padding:5px 9px" onclick="weekAvailPrev()">‹</button>'
     + '<button class="btn btn-o sm" style="font-size:11px;padding:5px 10px" onclick="weekAvailToday()">This week</button>'
     + '<button class="btn btn-o sm" style="font-size:11px;padding:5px 9px" onclick="weekAvailNext()">›</button>'
@@ -838,4 +839,75 @@ function renderOutlook(){
     + '<div style="display:flex;gap:3px;overflow-x:auto;align-items:flex-end;padding-bottom:4px;-webkit-overflow-scrolling:touch">'+bars+'</div>'
     + (peakDay && peak>0 ? '<div style="font-size:11px;color:var(--ink-faint);margin-top:8px">Busiest: '+peakDay.date.toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})+' ('+peak+'/'+cap+')'+(fullDays>0?' · '+fullDays+' day'+(fullDays!==1?'s':'')+' fully booked':'')+'</div>' : '<div style="font-size:11px;color:var(--ink-faint);margin-top:8px">No bookings in this period yet.</div>')
     + '</div>';
+}
+
+/* ═══════════════════════════════════════
+   Upcoming Stays popup — list of stays over 1/2/3/4 weeks
+   Shows arrival, departure, nights; pending visually marked.
+═══════════════════════════════════════ */
+let upcomingWeeks = 2;
+function openUpcoming(){ document.getElementById('upcoming-mo').classList.add('on'); renderUpcomingList(); }
+function closeUpcoming(){ document.getElementById('upcoming-mo').classList.remove('on'); }
+function setUpcomingWeeks(n){ upcomingWeeks = n; renderUpcomingList(); }
+function renderUpcomingList(){
+  const body=document.getElementById('upcoming-body');
+  if(!body) return;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const horizonEnd=new Date(today); horizonEnd.setDate(horizonEnd.getDate()+upcomingWeeks*7);
+
+  // Collect stays whose arrival falls within the window (confirmed, checked_in, pending)
+  const stays=(typeof requests!=='undefined'?requests:[]).filter(function(r){
+    if(r.status!=='confirmed' && r.status!=='checked_in' && r.status!=='pending') return false;
+    const ci=new Date(r.checkin); if(isNaN(ci)) return false;
+    const ciMid=new Date(ci.getFullYear(),ci.getMonth(),ci.getDate());
+    return ciMid>=today && ciMid<horizonEnd;
+  }).sort(function(a,b){ return new Date(a.checkin)-new Date(b.checkin); });
+
+  const tabs=[[1,'1 wk'],[2,'2 wk'],[3,'3 wk'],[4,'4 wk']].map(function(t){
+    const on=upcomingWeeks===t[0];
+    return '<button class="btn '+(on?'btn-p':'btn-o')+' sm" style="font-size:11px;padding:5px 12px" onclick="setUpcomingWeeks('+t[0]+')">'+t[1]+'</button>';
+  }).join('');
+
+  const fd=function(d){ return new Date(d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); };
+  const nights=function(ci,co){ const a=new Date(ci),b=new Date(co); if(isNaN(a)||isNaN(b))return 0; return Math.max(0,Math.round((new Date(b.getFullYear(),b.getMonth(),b.getDate())-new Date(a.getFullYear(),a.getMonth(),a.getDate()))/86400000)); };
+
+  // Summary
+  let totalNights=0, confirmedCount=0, pendingCount=0;
+  stays.forEach(function(r){ totalNights+=(r.dog_ids&&r.dog_ids.length?r.dog_ids.length:1)*nights(r.checkin,r.checkout); if(r.status==='pending')pendingCount++; else confirmedCount++; });
+
+  let rows;
+  if(!stays.length){
+    rows='<div style="padding:24px 0;text-align:center;color:var(--ink-faint);font-size:13px">No upcoming stays in the next '+upcomingWeeks+' week'+(upcomingWeeks!==1?'s':'')+'.</div>';
+  } else {
+    rows=stays.map(function(r){
+      const isPending=r.status==='pending';
+      const isHere=r.status==='checked_in';
+      const n=nights(r.checkin,r.checkout);
+      const dogCount=(r.dog_ids&&r.dog_ids.length)?r.dog_ids.length:1;
+      const svc=r.service==='boarding'?'🏡':'☀️';
+      const statusBadge=isPending
+        ? '<span style="font-size:10px;font-weight:700;color:var(--gold);background:rgba(217,164,65,0.15);padding:2px 7px;border-radius:20px">PENDING</span>'
+        : isHere
+        ? '<span style="font-size:10px;font-weight:700;color:var(--forest);background:rgba(74,103,65,0.12);padding:2px 7px;border-radius:20px">HERE NOW</span>'
+        : '<span style="font-size:10px;font-weight:700;color:var(--brown-dark);background:var(--cream-mid);padding:2px 7px;border-radius:20px">CONFIRMED</span>';
+      return '<div onclick="closeUpcoming();openDayMo(\''+_dsOf(new Date(r.checkin))+'\')" style="display:flex;align-items:center;gap:11px;padding:11px;border-bottom:1px solid var(--cream-mid);cursor:pointer'+(isPending?';opacity:.92;background:rgba(217,164,65,0.04)':'')+'">'
+        + '<div style="font-size:18px">'+svc+'</div>'
+        + '<div style="flex:1;min-width:0">'
+        + '<div style="font-size:14px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.dog_name||'')+(dogCount>1?' <span style="font-size:11px;color:var(--ink-faint)">('+dogCount+' dogs)</span>':'')+'</div>'
+        + '<div style="font-size:12px;color:var(--ink-faint);margin-top:1px">'+fd(r.checkin)+' → '+fd(r.checkout)+'</div>'
+        + '</div>'
+        + '<div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px">'
+        + '<div style="font-family:\'DM Serif Display\',serif;font-size:15px;color:var(--ink);line-height:1">'+(r.service==='daycare'?'day':n+'<span style="font-size:10px;font-family:\'DM Sans\',sans-serif;color:var(--ink-faint)"> night'+(n!==1?'s':'')+'</span>')+'</div>'
+        + statusBadge
+        + '</div></div>';
+    }).join('');
+  }
+
+  body.innerHTML='<div style="display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap">'+tabs+'</div>'
+    + '<div style="display:flex;gap:14px;margin-bottom:12px;font-size:12px;color:var(--ink-faint)">'
+    + '<span><strong style="color:var(--ink)">'+stays.length+'</strong> stay'+(stays.length!==1?'s':'')+'</span>'
+    + '<span><strong style="color:var(--ink)">'+totalNights+'</strong> dog-nights</span>'
+    + (pendingCount?'<span><strong style="color:var(--gold)">'+pendingCount+'</strong> pending</span>':'')
+    + '</div>'
+    + '<div style="border:1px solid var(--cream-dark);border-radius:var(--r2);overflow:hidden">'+rows+'</div>';
 }
