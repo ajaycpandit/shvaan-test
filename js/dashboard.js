@@ -855,9 +855,14 @@ function renderUpcomingList(){
   const today=new Date(); today.setHours(0,0,0,0);
   const horizonEnd=new Date(today); horizonEnd.setDate(horizonEnd.getDate()+upcomingWeeks*7);
 
-  // Collect stays whose arrival falls within the window (confirmed, checked_in, pending)
+  // Currently boarding = checked in right now (shown pinned at top, regardless of window)
+  const boardingNow=(typeof requests!=='undefined'?requests:[]).filter(function(r){
+    return r.status==='checked_in';
+  }).sort(function(a,b){ return new Date(a.checkout)-new Date(b.checkout); }); // soonest to leave first
+
+  // Arriving = confirmed/pending stays whose arrival falls within the window
   const stays=(typeof requests!=='undefined'?requests:[]).filter(function(r){
-    if(r.status!=='confirmed' && r.status!=='checked_in' && r.status!=='pending') return false;
+    if(r.status!=='confirmed' && r.status!=='pending') return false;
     const ci=new Date(r.checkin); if(isNaN(ci)) return false;
     const ciMid=new Date(ci.getFullYear(),ci.getMonth(),ci.getDate());
     return ciMid>=today && ciMid<horizonEnd;
@@ -874,40 +879,73 @@ function renderUpcomingList(){
   // Summary
   let totalNights=0, confirmedCount=0, pendingCount=0;
   stays.forEach(function(r){ totalNights+=(r.dog_ids&&r.dog_ids.length?r.dog_ids.length:1)*nights(r.checkin,r.checkout); if(r.status==='pending')pendingCount++; else confirmedCount++; });
+  let boardingDogs=0;
+  boardingNow.forEach(function(r){ boardingDogs+=(r.dog_ids&&r.dog_ids.length?r.dog_ids.length:1); });
 
-  let rows;
+  // Row builder for "arriving" stays (shows arrival → departure, nights)
+  function arrivingRow(r){
+    const isPending=r.status==='pending';
+    const n=nights(r.checkin,r.checkout);
+    const dogCount=(r.dog_ids&&r.dog_ids.length)?r.dog_ids.length:1;
+    const svc=r.service==='boarding'?'🏡':'☀️';
+    const statusBadge=isPending
+      ? '<span style="font-size:10px;font-weight:700;color:var(--gold);background:rgba(217,164,65,0.15);padding:2px 7px;border-radius:20px">PENDING</span>'
+      : '<span style="font-size:10px;font-weight:700;color:var(--brown-dark);background:var(--cream-mid);padding:2px 7px;border-radius:20px">CONFIRMED</span>';
+    return '<div onclick="closeUpcoming();openDayMo(\''+_dsOf(new Date(r.checkin))+'\')" style="display:flex;align-items:center;gap:11px;padding:11px;border-bottom:1px solid var(--cream-mid);cursor:pointer'+(isPending?';opacity:.92;background:rgba(217,164,65,0.04)':'')+'">'
+      + '<div style="font-size:18px">'+svc+'</div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:14px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.dog_name||'')+(dogCount>1?' <span style="font-size:11px;color:var(--ink-faint)">('+dogCount+' dogs)</span>':'')+'</div>'
+      + '<div style="font-size:12px;color:var(--ink-faint);margin-top:1px">'+fd(r.checkin)+' → '+fd(r.checkout)+'</div>'
+      + '</div>'
+      + '<div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px">'
+      + '<div style="font-family:\'DM Serif Display\',serif;font-size:15px;color:var(--ink);line-height:1">'+(r.service==='daycare'?'day':n+'<span style="font-size:10px;font-family:\'DM Sans\',sans-serif;color:var(--ink-faint)"> night'+(n!==1?'s':'')+'</span>')+'</div>'
+      + statusBadge
+      + '</div></div>';
+  }
+
+  // Row builder for "currently boarding" dogs (shows checkout date / nights left)
+  function boardingRow(r){
+    const dogCount=(r.dog_ids&&r.dog_ids.length)?r.dog_ids.length:1;
+    const svc=r.service==='boarding'?'🏡':'☀️';
+    const co=new Date(r.checkout);
+    const coMid=new Date(co.getFullYear(),co.getMonth(),co.getDate());
+    const nleft=isNaN(co)?0:Math.max(0,Math.round((coMid-today)/86400000));
+    const leaveToday=nleft===0;
+    return '<div onclick="closeUpcoming();openDayMo(\''+_dsOf(new Date(r.actual_checkin||r.checkin))+'\')" style="display:flex;align-items:center;gap:11px;padding:11px;border-bottom:1px solid var(--cream-mid);cursor:pointer;background:rgba(74,103,65,0.04)">'
+      + '<div style="font-size:18px">'+svc+'</div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:14px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.dog_name||'')+(dogCount>1?' <span style="font-size:11px;color:var(--ink-faint)">('+dogCount+' dogs)</span>':'')+'</div>'
+      + '<div style="font-size:12px;color:var(--ink-faint);margin-top:1px">'+(r.service==='daycare'?'Here today':'Here until '+fd(r.checkout))+'</div>'
+      + '</div>'
+      + '<div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px">'
+      + '<div style="font-family:\'DM Serif Display\',serif;font-size:15px;color:'+(leaveToday?'var(--gold)':'var(--ink)')+';line-height:1">'+(r.service==='daycare'?'day':(leaveToday?'leaves<span style="font-size:10px;font-family:\'DM Sans\',sans-serif"> today</span>':nleft+'<span style="font-size:10px;font-family:\'DM Sans\',sans-serif;color:var(--ink-faint)"> night'+(nleft!==1?'s':'')+' left</span>'))+'</div>'
+      + '<span style="font-size:10px;font-weight:700;color:var(--forest);background:rgba(74,103,65,0.12);padding:2px 7px;border-radius:20px">HERE NOW</span>'
+      + '</div></div>';
+  }
+
+  // Currently boarding section (pinned at top, only if any)
+  let boardingSection='';
+  if(boardingNow.length){
+    boardingSection='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--forest);margin:0 0 6px">Currently boarding ('+boardingDogs+')</div>'
+      + '<div style="border:1px solid var(--cream-dark);border-radius:var(--r2);overflow:hidden;margin-bottom:16px">'+boardingNow.map(boardingRow).join('')+'</div>';
+  }
+
+  // Arriving section
+  let arrivingSection;
   if(!stays.length){
-    rows='<div style="padding:24px 0;text-align:center;color:var(--ink-faint);font-size:13px">No upcoming stays in the next '+upcomingWeeks+' week'+(upcomingWeeks!==1?'s':'')+'.</div>';
+    arrivingSection='<div style="padding:24px 0;text-align:center;color:var(--ink-faint);font-size:13px">No arrivals in the next '+upcomingWeeks+' week'+(upcomingWeeks!==1?'s':'')+'.</div>';
   } else {
-    rows=stays.map(function(r){
-      const isPending=r.status==='pending';
-      const isHere=r.status==='checked_in';
-      const n=nights(r.checkin,r.checkout);
-      const dogCount=(r.dog_ids&&r.dog_ids.length)?r.dog_ids.length:1;
-      const svc=r.service==='boarding'?'🏡':'☀️';
-      const statusBadge=isPending
-        ? '<span style="font-size:10px;font-weight:700;color:var(--gold);background:rgba(217,164,65,0.15);padding:2px 7px;border-radius:20px">PENDING</span>'
-        : isHere
-        ? '<span style="font-size:10px;font-weight:700;color:var(--forest);background:rgba(74,103,65,0.12);padding:2px 7px;border-radius:20px">HERE NOW</span>'
-        : '<span style="font-size:10px;font-weight:700;color:var(--brown-dark);background:var(--cream-mid);padding:2px 7px;border-radius:20px">CONFIRMED</span>';
-      return '<div onclick="closeUpcoming();openDayMo(\''+_dsOf(new Date(r.checkin))+'\')" style="display:flex;align-items:center;gap:11px;padding:11px;border-bottom:1px solid var(--cream-mid);cursor:pointer'+(isPending?';opacity:.92;background:rgba(217,164,65,0.04)':'')+'">'
-        + '<div style="font-size:18px">'+svc+'</div>'
-        + '<div style="flex:1;min-width:0">'
-        + '<div style="font-size:14px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.dog_name||'')+(dogCount>1?' <span style="font-size:11px;color:var(--ink-faint)">('+dogCount+' dogs)</span>':'')+'</div>'
-        + '<div style="font-size:12px;color:var(--ink-faint);margin-top:1px">'+fd(r.checkin)+' → '+fd(r.checkout)+'</div>'
-        + '</div>'
-        + '<div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px">'
-        + '<div style="font-family:\'DM Serif Display\',serif;font-size:15px;color:var(--ink);line-height:1">'+(r.service==='daycare'?'day':n+'<span style="font-size:10px;font-family:\'DM Sans\',sans-serif;color:var(--ink-faint)"> night'+(n!==1?'s':'')+'</span>')+'</div>'
-        + statusBadge
-        + '</div></div>';
-    }).join('');
+    arrivingSection='<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-mid);margin:0 0 6px">Arriving</div>'
+      + '<div style="border:1px solid var(--cream-dark);border-radius:var(--r2);overflow:hidden">'+stays.map(arrivingRow).join('')+'</div>';
   }
 
   body.innerHTML='<div style="display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap">'+tabs+'</div>'
-    + '<div style="display:flex;gap:14px;margin-bottom:12px;font-size:12px;color:var(--ink-faint)">'
-    + '<span><strong style="color:var(--ink)">'+stays.length+'</strong> stay'+(stays.length!==1?'s':'')+'</span>'
+    + '<div style="display:flex;gap:14px;margin-bottom:14px;font-size:12px;color:var(--ink-faint);flex-wrap:wrap">'
+    + (boardingNow.length?'<span><strong style="color:var(--forest)">'+boardingDogs+'</strong> boarding now</span>':'')
+    + '<span><strong style="color:var(--ink)">'+stays.length+'</strong> arriving</span>'
     + '<span><strong style="color:var(--ink)">'+totalNights+'</strong> dog-nights</span>'
     + (pendingCount?'<span><strong style="color:var(--gold)">'+pendingCount+'</strong> pending</span>':'')
     + '</div>'
-    + '<div style="border:1px solid var(--cream-dark);border-radius:var(--r2);overflow:hidden">'+rows+'</div>';
+    + boardingSection
+    + arrivingSection;
 }
