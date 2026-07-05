@@ -259,6 +259,12 @@ async function saveCio(){
       const inDt=cioGetCheckinDate();
       if(isNaN(inDt)){ setSyncState('ok'); toast('Please set a valid check-in time.', true); return; }
       if(stamp<=inDt){ setSyncState('ok'); toast('Check-out must be after check-in.', true); return; }
+      // GUARD (bug #1): if this reservation already produced a booking, don't create a second.
+      if(r.booking_id && (typeof bookings!=='undefined') && bookings.some(b=>b.id===r.booking_id)){
+        setSyncState('ok');
+        toast('This stay already has an invoice. Use "Undo Checkout" first if you need to re-bill.', true);
+        return;
+      }
       const ctxs=reqDogContexts(r);
       const results=ctxs.map(dg=>({dog:dg, ...calcDogSvc(dg,inDt,stamp,r.service)}));
       const subtotal=results.reduce((s,x)=>s+x.total,0);

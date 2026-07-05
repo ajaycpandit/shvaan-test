@@ -41,14 +41,26 @@ function calcDogSvc(dog, i, o, service) {
     const days=Math.max(1,Math.ceil(hrs/24));
     return {rate, fullDays:days, extraHrs:0, surcharge:0, total:+(rate*days).toFixed(2), hrs:+hrs.toFixed(2)};
   }
-  const full=Math.floor(hrs/24), rem=hrs-full*24;
-  // FIXED: Only apply surcharge if full>=1 AND rem>threshold, and respect surchargeType
-  let sur=0;
-  if(full>=1 && rem>s.threshold) {
+  // Boarding: count complete 24h periods, then apply a 3-tier rule to the leftover time.
+  //   leftover <= grace threshold            -> no extra
+  //   grace < leftover <= fullDayThreshold    -> surcharge (% or $ from settings)
+  //   leftover > fullDayThreshold (default 8h)-> charge a full extra day (no surcharge)
+  const grace = (s.threshold!=null ? s.threshold : 3);          // grace hours before any charge
+  const fullDayThreshold = (s.fullDayHrs!=null ? s.fullDayHrs : 8); // hours over which a full day is charged
+  let full = Math.floor(hrs/24);
+  const rem = hrs - full*24;
+  let billDays = full;
+  let sur = 0;
+  if(rem > fullDayThreshold){
+    // leftover is large enough to count as a whole additional day
+    billDays = full + 1;
+  } else if(full>=1 && rem > grace){
+    // moderate leftover -> surcharge on top of the full days
     sur = s.surchargeType==='fixed' ? +(s.surchargeAmt||0).toFixed(2) : +(rate*s.surchargePct/100).toFixed(2);
   }
-  const total = +((full===0&&rem>0 ? rate : rate*full)+sur).toFixed(2);
-  return {rate, fullDays:full, extraHrs:+rem.toFixed(2), surcharge:sur, total, hrs:+hrs.toFixed(2)};
+  if(billDays < 1 && rem > 0) billDays = 1; // minimum one day for any boarding stay
+  const total = +((rate*billDays)+sur).toFixed(2);
+  return {rate, fullDays:billDays, extraHrs:+rem.toFixed(2), surcharge:sur, total, hrs:+hrs.toFixed(2)};
 }
 function recalc() {
   const ra=document.getElementById('result-area'), sr=document.getElementById('save-row');
