@@ -549,3 +549,9 @@ input:focus, select:focus, textarea:focus{ outline:none; }
   .df-sb{display:none}
   .dog-full-inner{max-height:100dvh;border-radius:0}
 }
+
+/* Help guide: hide default <summary> disclosure marker (we use our own layout) */
+#help-body summary::-webkit-details-marker{display:none}
+#help-body summary::marker{content:''}
+#help-body summary{position:relative}
+#help-body details[open] summary{border-bottom:1px solid var(--cream-dark)}

@@ -118,6 +118,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         <span>Website</span>
       </a>
+      <button onclick="openHelp()" class="tn-logout" title="Help &amp; guide">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Help</span>
+      </button>
       <button onclick="doLogout()" class="tn-logout">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         <span id="logout-email">Sign out</span>
@@ -572,6 +576,8 @@
 
 
 <!-- Day detail modal -->
+<div class="mo" id="help-mo"><div class="mo-inner" style="max-width:900px;width:94vw"><div class="mo-head"><h3>📖 Help &amp; Guide</h3><button class="btn btn-o sm" onclick="closeHelp()">Close</button></div><div class="mo-body" id="help-body" style="padding:0"></div></div></div>
+
 <div class="mo" id="upcoming-mo"><div class="mo-inner" style="max-width:640px"><div class="mo-head"><h3>Upcoming Stays</h3><button class="btn btn-o sm" onclick="closeUpcoming()">Close</button></div><div class="mo-body" id="upcoming-body"></div></div></div>
 
 <div class="mo" id="day-mo"><div class="mo-inner"><div class="mo-head"><h3 id="day-mo-title">Day Detail</h3><button class="btn btn-o sm" onclick="closeDayMo()">Close</button></div><div class="mo-body" id="day-mo-body"></div></div></div>
@@ -754,6 +760,7 @@
 <script src="js/excel.js"></script>
 <script src="js/history.js"></script>
 <script src="js/dashboard.js"></script>
+<script src="js/help.js"></script>
 <script src="js/finance.js"></script>
 <script src="js/invoice.js"></script>
 <script src="js/settings.js"></script>
