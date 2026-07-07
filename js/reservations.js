@@ -269,7 +269,7 @@ async function saveCio(){
       const results=ctxs.map(dg=>({dog:dg, ...calcDogSvc(dg,inDt,stamp,r.service)}));
       const subtotal=results.reduce((s,x)=>s+x.total,0);
       const disc=applyDiscount(subtotal);
-      const entries=results.map(x=>{ const share=subtotal>0?x.total/subtotal:0; const dDisc=+(disc.discount*share).toFixed(2); return {dogId:x.dog?x.dog.id:null,dogName:x.dog?x.dog.dog_name:'',ownerName:x.dog?x.dog.owner_name:r.owner_name,phone:x.dog?x.dog.phone:'',photo:x.dog?x.dog.photo:null,notes:x.dog?x.dog.notes:'',rate:x.rate,fullDays:x.fullDays,extraHrs:x.extraHrs,surcharge:x.surcharge,total:x.total,subtotal:x.total,discount:dDisc}; });
+      const entries=results.map(x=>{ const share=subtotal>0?x.total/subtotal:0; const dDisc=+(disc.discount*share).toFixed(2); return {dogId:x.dog?x.dog.id:null,dogName:x.dog?x.dog.dog_name:'',ownerName:x.dog?x.dog.owner_name:r.owner_name,phone:x.dog?x.dog.phone:'',photo:x.dog?x.dog.photo:null,notes:x.dog?x.dog.notes:'',rate:x.rate,fullDays:x.fullDays,extraHrs:x.extraHrs,surcharge:x.surcharge,lines:x.lines||[],total:x.total,subtotal:x.total,discount:dDisc}; });
       if(entries[0]){ entries[0].requested_checkin=r.checkin; entries[0].requested_checkout=r.checkout; entries[0].discount_type=disc.type; entries[0].discount_val=disc.val; }
       const booking={ id:Date.now().toString(), saved_at:new Date().toISOString(), service:r.service, checkin:inDt.toISOString(), checkout:stamp.toISOString(), grand_total:disc.total, requested_checkin:r.checkin, requested_checkout:r.checkout, entries:entries };
       try {

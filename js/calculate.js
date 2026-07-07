@@ -16,21 +16,9 @@ function getTimes() {
   return {i,o};
 }
 function calcDog(dog, i, o) {
-  const s = settings;
-  const rate = dog.rate_override!=null ? parseFloat(dog.rate_override) : (svc==='boarding'?s.boardingRate:s.daycareRate);
-  const hrs = (o-i)/3600000;
-  if(svc==='daycare') {
-    const days=Math.max(1,Math.ceil(hrs/24));
-    return {rate, fullDays:days, extraHrs:0, surcharge:0, total:+(rate*days).toFixed(2), hrs:+hrs.toFixed(2)};
-  }
-  const full=Math.floor(hrs/24), rem=hrs-full*24;
-  // FIXED: Only apply surcharge if full>=1 AND rem>threshold, and respect surchargeType
-  let sur=0;
-  if(full>=1 && rem>s.threshold) {
-    sur = s.surchargeType==='fixed' ? +(s.surchargeAmt||0).toFixed(2) : +(rate*s.surchargePct/100).toFixed(2);
-  }
-  const total = +((full===0&&rem>0 ? rate : rate*full)+sur).toFixed(2);
-  return {rate, fullDays:full, extraHrs:+rem.toFixed(2), surcharge:sur, total, hrs:+hrs.toFixed(2)};
+  // Calculator uses the exact same engine as checkout/invoice.
+  // `svc` is the calculator's current service toggle (boarding/daycare).
+  return calcDogSvc(dog, i, o, svc);
 }
 // Service-explicit version (doesn't depend on the global svc) used by the reservation workflow
 function calcDogSvc(dog, i, o, service) {
@@ -41,26 +29,55 @@ function calcDogSvc(dog, i, o, service) {
     const days=Math.max(1,Math.ceil(hrs/24));
     return {rate, fullDays:days, extraHrs:0, surcharge:0, total:+(rate*days).toFixed(2), hrs:+hrs.toFixed(2)};
   }
-  // Boarding: count complete 24h periods, then apply a 3-tier rule to the leftover time.
-  //   leftover <= grace threshold            -> no extra
-  //   grace < leftover <= fullDayThreshold    -> surcharge (% or $ from settings)
-  //   leftover > fullDayThreshold (default 8h)-> charge a full extra day (no surcharge)
-  const grace = (s.threshold!=null ? s.threshold : 3);          // grace hours before any charge
-  const fullDayThreshold = (s.fullDayHrs!=null ? s.fullDayHrs : 8); // hours over which a full day is charged
+  // Boarding: count complete 24h periods, then evaluate late-checkout rules on the leftover.
   let full = Math.floor(hrs/24);
   const rem = hrs - full*24;
   let billDays = full;
-  let sur = 0;
-  if(rem > fullDayThreshold){
-    // leftover is large enough to count as a whole additional day
-    billDays = full + 1;
-  } else if(full>=1 && rem > grace){
-    // moderate leftover -> surcharge on top of the full days
-    sur = s.surchargeType==='fixed' ? +(s.surchargeAmt||0).toFixed(2) : +(rate*s.surchargePct/100).toFixed(2);
+  let surcharge = 0;
+  const lines = []; // itemized extras for the invoice: {label, amount}
+
+  // Configurable rules from settings.lateRules. Each rule:
+  //  { minH, maxH, action:'percent'|'fixed'|'fullday', value, label, stack, enabled }
+  // Evaluated top to bottom; a matching non-stacking rule stops further evaluation.
+  const rules = (s.lateRules && s.lateRules.length) ? s.lateRules : defaultLateRules(s);
+  for(let idx=0; idx<rules.length; idx++){
+    const r = rules[idx];
+    if(r.enabled===false) continue;
+    const minH = (r.minH!=null?r.minH:0);
+    const maxH = (r.maxH!=null?r.maxH:Infinity);
+    // Lower bound is exclusive by default (> minH); set minInclusive:true for >= minH.
+    // Upper bound is inclusive (<= maxH). This lets adjacent tiers meet at a boundary,
+    // e.g. surcharge (3, 8] and full-day [8, 24] both able to own exactly 8h depending on order.
+    const lowOk = r.minInclusive ? (rem >= minH) : (rem > minH);
+    if(lowOk && rem <= maxH){
+      let amt = 0;
+      if(r.action==='percent') amt = rate*(r.value||0)/100;
+      else if(r.action==='fixed') amt = (r.value||0);
+      else if(r.action==='fullday') amt = rate; // full extra day's price, shown as a line
+      amt = +amt.toFixed(2);
+      if(amt>0){ surcharge += amt; lines.push({label:r.label||'Late checkout', amount:amt}); }
+      if(!r.stack) break;
+    }
   }
+
   if(billDays < 1 && rem > 0) billDays = 1; // minimum one day for any boarding stay
-  const total = +((rate*billDays)+sur).toFixed(2);
-  return {rate, fullDays:billDays, extraHrs:+rem.toFixed(2), surcharge:sur, total, hrs:+hrs.toFixed(2)};
+  surcharge = +surcharge.toFixed(2);
+  const total = +((rate*billDays)+surcharge).toFixed(2);
+  return {rate, fullDays:billDays, extraHrs:+rem.toFixed(2), surcharge, total, hrs:+hrs.toFixed(2), lines};
+}
+// Default late-checkout rules derived from legacy settings, so behavior is unchanged
+// until the owner customizes them:  grace..8h -> surcharge;  >=8h -> full day (labeled as surcharge).
+function defaultLateRules(s){
+  const grace = (s.threshold!=null ? s.threshold : 3);
+  const fullDayH = (s.fullDayHrs!=null ? s.fullDayHrs : 8);
+  const isFixed = s.surchargeType==='fixed';
+  return [
+    // Evaluated in order. Full-day first so exactly-8h (and beyond) claims the full-day tier.
+    { minH:fullDayH, maxH:24, minInclusive:true, action:'fullday', value:0,
+      label:'Late checkout (full day)', stack:false, enabled:true },
+    { minH:grace, maxH:fullDayH, action:(isFixed?'fixed':'percent'), value:(isFixed?(s.surchargeAmt||0):(s.surchargePct||0)),
+      label:'Late checkout'+(isFixed?'':' ('+(s.surchargePct||0)+'%)'), stack:false, enabled:true }
+  ];
 }
 function recalc() {
   const ra=document.getElementById('result-area'), sr=document.getElementById('save-row');

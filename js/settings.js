@@ -12,6 +12,7 @@ function renderSettings() {
   const lp=document.getElementById('logo-preview'); if(lp) lp.src=pendingLogo||currentLogo();
   updateScPrev();
   if(typeof renderRoleTemplates === 'function') renderRoleTemplates();
+  if(typeof renderLateRules === 'function') renderLateRules();
   if(typeof updateThemeSettingsRow === 'function') updateThemeSettingsRow();
   
   // Render surcharge settings directly
@@ -318,8 +319,12 @@ async function saveSettings() {
     logo: pendingLogo==='__default__' ? null : (pendingLogo || settings.logo || null),
     theme: settings.theme || 'terracotta',
     trendsEnabled: settings.trendsEnabled || {},
-    reversalToolEnabled: settings.reversalToolEnabled || false
+    reversalToolEnabled: settings.reversalToolEnabled || false,
+    lateRules: settings.lateRules || [],
+    fullDayHrs: (settings&&settings.fullDayHrs!=null)?settings.fullDayHrs:8
   };
+  // Commit any edits made in the late-checkout rules manager.
+  if(typeof lateRulesCommit === 'function') lateRulesCommit(settings);
   setSyncState('busy');
   try { await dbSaveSettings(settings); try{ if(settings.logo) localStorage.setItem('shvaan_logo', settings.logo); else localStorage.removeItem('shvaan_logo'); }catch(e){} pendingLogo=null; applyLogo(); setSyncState('ok'); toast('Settings saved!'); recalc(); }
   catch(e){ setSyncState('err'); toast('Error saving settings: '+e.message, true); }
